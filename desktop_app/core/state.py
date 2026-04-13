@@ -63,13 +63,13 @@ class AppState(QObject):
             self.error.emit(str(exc))
             return False
 
-    def register(self, full_name: str, email: str, password: str, role: str = "Менеджер") -> bool:
+    def register(self, full_name: str, email: str, password: str) -> bool:
         try:
-            payload = self.api.register(full_name=full_name, email=email, password=password, role=role)
+            payload = self.api.register(full_name=full_name, email=email, password=password)
             token = payload.get("token")
             if token:
                 self.api.set_token(token)
-            self.user = payload.get("user") or {"fullName": full_name, "email": email, "role": role}
+            self.user = payload.get("user") or {"fullName": full_name, "email": email, "role": "Сотрудник"}
             self.is_authenticated = True
             self.auth_changed.emit(True)
             return True

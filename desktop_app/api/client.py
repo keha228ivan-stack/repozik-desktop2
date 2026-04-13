@@ -49,15 +49,32 @@ class ApiClient:
         except Exception as exc:
             raise ApiError("Failed to parse JSON response") from exc
 
+    def _try_register_variant(self, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._request("POST", "/auth/register", json=payload)
+
     def login(self, email: str, password: str) -> Dict[str, Any]:
         return self._request("POST", "/auth/login", json={"email": email, "password": password})
 
-    def register(self, full_name: str, email: str, password: str, role: str = "Менеджер") -> Dict[str, Any]:
-        return self._request(
-            "POST",
-            "/auth/register",
-            json={"fullName": full_name, "email": email, "password": password, "role": role},
-        )
+    def register(self, full_name: str, email: str, password: str) -> Dict[str, Any]:
+        # Приложение только для сотрудников: фиксируем роль и не показываем выбор в UI.
+        variants = [
+            {"fullName": full_name, "email": email, "password": password, "role": "Сотрудник"},
+            {"fullName": full_name, "email": email, "password": password, "role": "employee"},
+            {"name": full_name, "email": email, "password": password, "role": "employee"},
+            {"fullName": full_name, "email": email, "password": password},
+            {"name": full_name, "email": email, "password": password},
+        ]
+
+        last_error: ApiError | None = None
+        for payload in variants:
+            try:
+                return self._try_register_variant(payload)
+            except ApiError as exc:
+                last_error = exc
+                # продолжаем, чтобы подобрать формат payload под backend
+                continue
+
+        raise last_error or ApiError("Registration failed")
 
     def me(self) -> Dict[str, Any]:
         return self._request("GET", "/auth/me")

@@ -1,6 +1,5 @@
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
-    QComboBox,
     QFormLayout,
     QFrame,
     QLabel,
@@ -83,8 +82,9 @@ class LoginView(QWidget):
         self.reg_password = QLineEdit()
         self.reg_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_password.setPlaceholderText("Не менее 8 символов")
-        self.reg_role = QComboBox()
-        self.reg_role.addItems(["Менеджер", "Сотрудник", "HR", "Администратор"])
+
+        info = QLabel("Регистрация доступна только для сотрудников")
+        info.setObjectName("hint")
 
         btn = QPushButton("Создать аккаунт")
         btn.setObjectName("primary")
@@ -93,7 +93,7 @@ class LoginView(QWidget):
         form.addRow("ФИО", self.reg_name)
         form.addRow("Email", self.reg_email)
         form.addRow("Пароль", self.reg_password)
-        form.addRow("Роль", self.reg_role)
+        form.addRow("", info)
         form.addRow("", btn)
         return w
 
@@ -110,11 +110,10 @@ class LoginView(QWidget):
         full_name = self.reg_name.text().strip()
         email = self.reg_email.text().strip()
         password = self.reg_password.text()
-        role = self.reg_role.currentText()
         if not full_name or not email or not password:
             self._show_error("Заполните все поля регистрации")
             return
-        self.state.register(full_name, email, password, role)
+        self.state.register(full_name, email, password)
 
     def _show_error(self, text: str) -> None:
         QMessageBox.critical(self, "Ошибка", text)
@@ -127,9 +126,10 @@ class LoginView(QWidget):
             QLabel#subtitle { font-size: 20px; color: #536888; margin-bottom: 10px; }
             QFrame#card { background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; }
             QLabel#cardTitle { font-size: 24px; font-weight: 600; color: #0f172a; margin-bottom: 6px; }
+            QLabel#hint { color: #64748b; font-size: 13px; }
             QPushButton#primary { background: #2563eb; color: white; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
             QPushButton#primary:hover { background: #1d4ed8; }
             QPushButton#switch { color: #2563eb; background: transparent; border: none; }
-            QLineEdit, QComboBox { border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px; background: #fff; }
+            QLineEdit { border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px; background: #fff; }
             """
         )
