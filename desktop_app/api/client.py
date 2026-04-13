@@ -52,6 +52,13 @@ class ApiClient:
     def login(self, email: str, password: str) -> Dict[str, Any]:
         return self._request("POST", "/auth/login", json={"email": email, "password": password})
 
+    def register(self, full_name: str, email: str, password: str, role: str = "Менеджер") -> Dict[str, Any]:
+        return self._request(
+            "POST",
+            "/auth/register",
+            json={"fullName": full_name, "email": email, "password": password, "role": role},
+        )
+
     def me(self) -> Dict[str, Any]:
         return self._request("GET", "/auth/me")
 
