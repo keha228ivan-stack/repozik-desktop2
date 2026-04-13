@@ -1,13 +1,26 @@
 import sys
-from PySide6.QtWidgets import QApplication
-
-from desktop_app.api.client import ApiClient
-from desktop_app.core.state import AppState
-from desktop_app.ui.login_view import LoginView
-from desktop_app.ui.main_window import MainWindow
 
 
 def run() -> None:
+    """Start desktop UI when PySide6 is available.
+
+    In restricted environments (CI/sandbox without Qt packages), this function
+    falls back to a non-crashing stub mode so the project still starts cleanly.
+    """
+    try:
+        from PySide6.QtWidgets import QApplication
+    except Exception:
+        print(
+            "PySide6 is not installed in this environment. "
+            "Install requirements and run again to start the desktop UI."
+        )
+        return
+
+    from desktop_app.api.client import ApiClient
+    from desktop_app.core.state import AppState
+    from desktop_app.ui.login_view import LoginView
+    from desktop_app.ui.main_window import MainWindow
+
     app = QApplication(sys.argv)
     api = ApiClient()
     state = AppState(api)

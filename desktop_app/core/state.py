@@ -1,8 +1,28 @@
-from typing import Any, Dict, List
-
-from PySide6.QtCore import QObject, Signal
+from typing import Any, Callable, Dict, List
 
 from desktop_app.api.client import ApiClient, ApiError
+
+
+class _SimpleSignal:
+    def __init__(self) -> None:
+        self._subs: List[Callable] = []
+
+    def connect(self, fn: Callable) -> None:
+        self._subs.append(fn)
+
+    def emit(self, *args: Any, **kwargs: Any) -> None:
+        for fn in list(self._subs):
+            fn(*args, **kwargs)
+
+
+try:
+    from PySide6.QtCore import QObject, Signal  # type: ignore
+except Exception:
+    class QObject:  # type: ignore
+        pass
+
+    def Signal(*_args: Any, **_kwargs: Any) -> _SimpleSignal:  # type: ignore
+        return _SimpleSignal()
 
 
 class AppState(QObject):
