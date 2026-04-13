@@ -49,32 +49,43 @@ class ApiClient:
         except Exception as exc:
             raise ApiError("Failed to parse JSON response") from exc
 
-    def _try_register_variant(self, payload: Dict[str, Any]) -> Dict[str, Any]:
-        return self._request("POST", "/auth/register", json=payload)
+    def _try_register_variant(self, path: str, payload: Dict[str, Any]) -> Dict[str, Any]:
+        return self._request("POST", path, json=payload)
 
     def login(self, email: str, password: str) -> Dict[str, Any]:
         return self._request("POST", "/auth/login", json={"email": email, "password": password})
 
     def register(self, full_name: str, email: str, password: str) -> Dict[str, Any]:
-        # Приложение только для сотрудников: фиксируем роль и не показываем выбор в UI.
-        variants = [
-            {"fullName": full_name, "email": email, "password": password, "role": "Сотрудник"},
+        # Приложение только для сотрудников: роль фиксированная.
+        payload_variants = [
             {"fullName": full_name, "email": email, "password": password, "role": "employee"},
+            {"fullName": full_name, "email": email, "password": password, "role": "Сотрудник"},
             {"name": full_name, "email": email, "password": password, "role": "employee"},
             {"fullName": full_name, "email": email, "password": password},
             {"name": full_name, "email": email, "password": password},
         ]
+        register_paths = [
+            "/auth/register",
+            "/auth/signup",
+            "/register",
+            "/users/register",
+            "/employees/register",
+            "/auth/employee/register",
+        ]
 
         last_error: ApiError | None = None
-        for payload in variants:
-            try:
-                return self._try_register_variant(payload)
-            except ApiError as exc:
-                last_error = exc
-                # продолжаем, чтобы подобрать формат payload под backend
-                continue
+        for path in register_paths:
+            for payload in payload_variants:
+                try:
+                    return self._try_register_variant(path, payload)
+                except ApiError as exc:
+                    last_error = exc
+                    continue
 
-        raise last_error or ApiError("Registration failed")
+        # Более явное сообщение, чтобы пользователь видел причину.
+        raise ApiError(
+            f"Не удалось зарегистрировать аккаунт. Последняя ошибка: {last_error}"
+        )
 
     def me(self) -> Dict[str, Any]:
         return self._request("GET", "/auth/me")

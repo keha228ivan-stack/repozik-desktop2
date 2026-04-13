@@ -113,6 +113,12 @@ class LoginView(QWidget):
         if not full_name or not email or not password:
             self._show_error("Заполните все поля регистрации")
             return
+        if len(password) < 8:
+            self._show_error("Пароль должен содержать минимум 8 символов")
+            return
+        if "@" not in email:
+            self._show_error("Введите корректный email")
+            return
         self.state.register(full_name, email, password)
 
     def _show_error(self, text: str) -> None:
