@@ -62,8 +62,11 @@ class ApiClient:
         # Сначала используем каноничный payload, альтернативы — только для обратной совместимости.
         payload_variants = [
             {"fullName": full_name, "email": email, "password": password, "role": "employee"},
+            {"full_name": full_name, "email": email, "password": password, "role": "employee"},
             {"name": full_name, "email": email, "password": password, "role": "employee"},
+            {"fullName": full_name, "email": email, "password": password, "role": "Сотрудник"},
             {"fullName": full_name, "email": email, "password": password},
+            {"full_name": full_name, "email": email, "password": password},
             {"name": full_name, "email": email, "password": password},
         ]
         register_paths = [
@@ -89,10 +92,10 @@ class ApiClient:
                     # 404/405: этот путь не подходит — переходим к следующему endpoint.
                     if status_code in (404, 405):
                         break
-                    # 5xx (включая 502): возможно, конкретный маршрут за прокси сломан,
-                    # поэтому пробуем следующий endpoint вместо полного завершения.
+                    # 5xx (включая 502): на части бэкендов ошибка зависит от конкретной схемы body,
+                    # поэтому сначала пробуем следующий payload на этом же endpoint.
                     if status_code is not None and status_code >= 500:
-                        break
+                        continue
                     # Для остальных ошибок (401/403/409 и т.п.) сразу возвращаем исходную причину.
                     raise exc
 
