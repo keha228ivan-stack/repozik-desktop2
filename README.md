@@ -11,11 +11,11 @@ Desktop-клиент системы управления персоналом н
 
 ## Запуск
 
-```bash
+```powershell
 python -m venv .venv
-source .venv/bin/activate
+.\.venv\Scripts\Activate.ps1
 pip install -r requirements-desktop.txt
-export HR_API_BASE_URL=http://localhost:3000/api
+$env:HR_API_BASE_URL = "http://localhost:3000/api"
 python -m desktop_app.main
 ```
 
