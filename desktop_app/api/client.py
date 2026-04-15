@@ -83,17 +83,18 @@ class ApiClient:
                 except ApiError as exc:
                     last_error = exc
                     status_code = exc.status_code
-                    # При ошибках сервера (502/503/500) не штурмуем подряд другие варианты,
-                    # чтобы не усугублять проблему и не маскировать первопричину.
+                    # 400/422: endpoint найден, но формат payload может не совпадать — пробуем следующий вариант.
+                    if status_code in (400, 422):
+                        continue
+                    # 404/405: этот путь не подходит — переходим к следующему endpoint.
+                    if status_code in (404, 405):
+                        break
+                    # 5xx (включая 502): возможно, конкретный маршрут за прокси сломан,
+                    # поэтому пробуем следующий endpoint вместо полного завершения.
                     if status_code is not None and status_code >= 500:
-                        raise ApiError(
-                            "Сервис регистрации временно недоступен. "
-                            "Попробуйте позже или проверьте HR_API_BASE_URL."
-                        ) from exc
-                    # Перебор путей имеет смысл только если endpoint действительно не найден.
-                    if status_code is not None and status_code not in (404, 405):
-                        raise exc
-                    continue
+                        break
+                    # Для остальных ошибок (401/403/409 и т.п.) сразу возвращаем исходную причину.
+                    raise exc
 
         # Более явное сообщение, чтобы пользователь видел причину.
         raise ApiError(
