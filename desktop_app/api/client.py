@@ -7,7 +7,9 @@ from desktop_app.core.session_store import SessionStore
 
 
 class ApiError(Exception):
-    pass
+    def __init__(self, message: str, status_code: int | None = None) -> None:
+        super().__init__(message)
+        self.status_code = status_code
 
 
 class ApiClient:
@@ -39,7 +41,7 @@ class ApiClient:
                 message = payload.get("message") or payload.get("error") or response.text
             except Exception:
                 message = response.text
-            raise ApiError(f"API {response.status_code}: {message}")
+            raise ApiError(f"API {response.status_code}: {message}", status_code=response.status_code)
 
         if response.status_code == 204 or not response.content:
             return {}
@@ -57,9 +59,9 @@ class ApiClient:
 
     def register(self, full_name: str, email: str, password: str) -> Dict[str, Any]:
         # Приложение только для сотрудников: роль фиксированная.
+        # Сначала используем каноничный payload, альтернативы — только для обратной совместимости.
         payload_variants = [
             {"fullName": full_name, "email": email, "password": password, "role": "employee"},
-            {"fullName": full_name, "email": email, "password": password, "role": "Сотрудник"},
             {"name": full_name, "email": email, "password": password, "role": "employee"},
             {"fullName": full_name, "email": email, "password": password},
             {"name": full_name, "email": email, "password": password},
@@ -80,6 +82,17 @@ class ApiClient:
                     return self._try_register_variant(path, payload)
                 except ApiError as exc:
                     last_error = exc
+                    status_code = exc.status_code
+                    # При ошибках сервера (502/503/500) не штурмуем подряд другие варианты,
+                    # чтобы не усугублять проблему и не маскировать первопричину.
+                    if status_code is not None and status_code >= 500:
+                        raise ApiError(
+                            "Сервис регистрации временно недоступен. "
+                            "Попробуйте позже или проверьте HR_API_BASE_URL."
+                        ) from exc
+                    # Перебор путей имеет смысл только если endpoint действительно не найден.
+                    if status_code is not None and status_code not in (404, 405):
+                        raise exc
                     continue
 
         # Более явное сообщение, чтобы пользователь видел причину.
