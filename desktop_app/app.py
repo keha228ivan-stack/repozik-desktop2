@@ -1,4 +1,5 @@
 import sys
+import logging
 
 
 def run() -> None:
@@ -20,6 +21,11 @@ def run() -> None:
     from desktop_app.core.state import AppState
     from desktop_app.ui.login_view import LoginView
     from desktop_app.ui.main_window import MainWindow
+
+    logging.basicConfig(
+        level=logging.INFO,
+        format="%(asctime)s %(levelname)s [%(name)s] %(message)s",
+    )
 
     app = QApplication(sys.argv)
     api = ApiClient()

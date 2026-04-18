@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QListWidget, QPushButton, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QLabel, QListWidget, QPushButton, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
@@ -8,15 +8,23 @@ class NotificationsPage(QWidget):
         super().__init__()
         self.state = state
         self.list = QListWidget()
-        refresh_btn = QPushButton("Refresh")
+        self.status = QLabel("")
+        self.status.setStyleSheet("color: #b45309;")
+
+        refresh_btn = QPushButton("Повторить")
         refresh_btn.clicked.connect(self.refresh)
+
         layout = QVBoxLayout()
+        layout.addWidget(self.status)
         layout.addWidget(self.list)
         layout.addWidget(refresh_btn)
         self.setLayout(layout)
+
         self.state.notifications_changed.connect(self._set_items)
+        self.state.notifications_error.connect(self._set_error)
 
     def refresh(self) -> None:
+        self.status.setText("Загрузка уведомлений...")
         self.state.load_notifications()
 
     def _set_items(self, items: list) -> None:
@@ -24,3 +32,12 @@ class NotificationsPage(QWidget):
         for n in items:
             marker = "✓" if n.get("read") else "•"
             self.list.addItem(f"{marker} {n.get('title', '')}")
+
+        if not items:
+            self.status.setText("Уведомлений пока нет.")
+        else:
+            self.status.setText("")
+
+    def _set_error(self, text: str) -> None:
+        if text:
+            self.status.setText(text)
