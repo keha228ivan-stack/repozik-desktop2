@@ -51,6 +51,7 @@ class AppState(QObject):
         self.api = api
         self.user: Dict[str, Any] | None = None
         self.is_authenticated = False
+        self.offline_mode = False
         self._last_error_text: str | None = None
 
         self._demo_user = {
@@ -77,12 +78,12 @@ class AppState(QObject):
         return available
 
     def _bootstrap_session(self) -> None:
-        self._set_backend_status(self.api.is_backend_available())
         if not self.api.is_backend_available():
-            self.user = None
-            self.is_authenticated = False
+            self._enable_offline_mode()
             return
 
+        self.offline_mode = False
+        self._set_backend_status(True)
         try:
             me = self.api.me()
             self.user = me
@@ -90,8 +91,19 @@ class AppState(QObject):
         except ApiError:
             self.user = None
             self.is_authenticated = False
+    
+    def _enable_offline_mode(self) -> None:
+        self.offline_mode = True
+        self.user = dict(self._demo_user)
+        self.is_authenticated = True
+        self._set_backend_status(False)
 
     def login(self, email: str, password: str) -> bool:
+        if self.offline_mode and email.lower() == self._demo_user["email"] and password == self._demo_password:
+            self.user = dict(self._demo_user)
+            self.is_authenticated = True
+            self.auth_changed.emit(True)
+            return True
         try:
             payload = self.api.login(email, password)
             token = payload.get("token")
@@ -114,6 +126,15 @@ class AppState(QObject):
             return False
         if email.lower() != self._demo_user["email"] or password != self._demo_password:
             return False
+        self._enable_offline_mode()
+        self.auth_changed.emit(True)
+        return True
+
+    def _try_offline_demo_login(self, email: str, password: str, error: ApiError) -> bool:
+        if "Не удалось подключиться к серверу" not in str(error) and "Сервер временно недоступен" not in str(error):
+            return False
+        if email.lower() != self._demo_user["email"] or password != self._demo_password:
+            return False
         self.user = dict(self._demo_user)
         self.is_authenticated = True
         self.auth_changed.emit(True)
@@ -121,6 +142,9 @@ class AppState(QObject):
         return True
 
     def register(self, full_name: str, email: str, password: str) -> bool:
+        if self.offline_mode:
+            self._emit_error("Сервер недоступен. Регистрация временно отключена в офлайн-режиме.")
+            return False
         try:
             payload = self.api.register(full_name=full_name, email=email, password=password)
             token = payload.get("token")
@@ -143,6 +167,12 @@ class AppState(QObject):
         self.auth_changed.emit(False)
 
     def load_profile(self) -> None:
+        if self.offline_mode:
+            self.profile_changed.emit(
+                {"fullName": self._demo_user["fullName"], "phone": "+7 (900) 000-00-00"}
+            )
+            self.profile_error.emit("")
+            return
         try:
             profile = self.api.get_profile()
             self.profile_changed.emit(profile)
@@ -155,6 +185,10 @@ class AppState(QObject):
             self._set_backend_status(False)
 
     def save_profile(self, payload: Dict[str, Any]) -> None:
+        if self.offline_mode:
+            self.profile_changed.emit(payload)
+            self.profile_error.emit("Изменения сохранены локально (офлайн-режим).")
+            return
         try:
             profile = self.api.update_profile(payload)
             self.profile_changed.emit(profile)
@@ -167,6 +201,16 @@ class AppState(QObject):
             self._set_backend_status(False)
 
     def load_courses(self, q: str = "") -> None:
+        if self.offline_mode:
+            mock_courses = [
+                {"title": "Введение в HR-процессы"},
+                {"title": "Оценка эффективности сотрудников"},
+                {"title": "Коммуникация в команде"},
+            ]
+            filtered = [c for c in mock_courses if q.lower() in c["title"].lower()] if q else mock_courses
+            self.courses_changed.emit(filtered)
+            self.courses_error.emit("")
+            return
         try:
             data = self.api.get_courses(q)
             courses: List[dict] = data.get("items") or data.get("courses") or []
@@ -180,6 +224,15 @@ class AppState(QObject):
             self._set_backend_status(False)
 
     def load_notifications(self) -> None:
+        if self.offline_mode:
+            self.notifications_changed.emit(
+                [
+                    {"title": "Добро пожаловать в демо-режим", "read": False},
+                    {"title": "Backend недоступен: данные могут быть неполными", "read": True},
+                ]
+            )
+            self.notifications_error.emit("")
+            return
         try:
             data = self.api.get_notifications()
             items = data.get("items") or data.get("notifications") or []
@@ -193,6 +246,15 @@ class AppState(QObject):
             self._set_backend_status(False)
 
     def load_topics(self) -> None:
+        if self.offline_mode:
+            self.forum_changed.emit(
+                [
+                    {"title": "FAQ по демо-режиму"},
+                    {"title": "Как подключить реальный backend"},
+                ]
+            )
+            self.forum_error.emit("")
+            return
         try:
             data = self.api.get_topics()
             items = data.get("items") or data.get("topics") or []
@@ -206,6 +268,9 @@ class AppState(QObject):
             self._set_backend_status(False)
 
     def create_topic(self, title: str, body: str) -> bool:
+        if self.offline_mode:
+            self.forum_error.emit("В офлайн-режиме создание тем отключено.")
+            return False
         try:
             self.api.create_topic(title, body)
             self._set_backend_status(True)

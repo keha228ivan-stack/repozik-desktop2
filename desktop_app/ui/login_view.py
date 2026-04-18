@@ -67,12 +67,15 @@ class LoginView(QWidget):
         btn = QPushButton("Войти")
         btn.setObjectName("primary")
         btn.clicked.connect(self._submit_login)
+        demo_btn = QPushButton("Войти в демо")
+        demo_btn.clicked.connect(self._login_demo)
         demo_hint = QLabel("Если API недоступен: demo@company.local / Demo12345!")
         demo_hint.setObjectName("hint")
         form.addRow("Email", self.email)
         form.addRow("Пароль", self.password)
         form.addRow("", demo_hint)
         form.addRow("", btn)
+        form.addRow("", demo_btn)
         return w
 
     def _build_register_form(self) -> QWidget:
@@ -123,6 +126,11 @@ class LoginView(QWidget):
             self._show_error("Введите корректный email")
             return
         self.state.register(full_name, email, password)
+
+    def _login_demo(self) -> None:
+        self.email.setText("demo@company.local")
+        self.password.setText("Demo12345!")
+        self._submit_login()
 
     def _show_error(self, text: str) -> None:
         if self.isVisible():
