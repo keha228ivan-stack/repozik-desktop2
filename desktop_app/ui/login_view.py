@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from desktop_app.core.state import AppState
+from desktop_app.ui.theme import login_stylesheet
 
 
 class LoginView(QWidget):
@@ -137,17 +138,4 @@ class LoginView(QWidget):
             QMessageBox.critical(self, "Ошибка", text)
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet(
-            """
-            QWidget { background: #f6f8fb; font-size: 15px; }
-            QLabel#title { font-size: 36px; font-weight: 700; color: #0b1730; }
-            QLabel#subtitle { font-size: 20px; color: #536888; margin-bottom: 10px; }
-            QFrame#card { background: #ffffff; border-radius: 18px; border: 1px solid #e2e8f0; }
-            QLabel#cardTitle { font-size: 24px; font-weight: 600; color: #0f172a; margin-bottom: 6px; }
-            QLabel#hint { color: #64748b; font-size: 13px; }
-            QPushButton#primary { background: #2563eb; color: white; border: none; border-radius: 10px; padding: 10px 14px; font-weight: 600; }
-            QPushButton#primary:hover { background: #1d4ed8; }
-            QPushButton#switch { color: #2563eb; background: transparent; border: none; }
-            QLineEdit { border: 1px solid #cbd5e1; border-radius: 10px; padding: 9px; background: #fff; }
-            """
-        )
+        self.setStyleSheet(login_stylesheet())

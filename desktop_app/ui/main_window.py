@@ -5,6 +5,7 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
+    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -14,6 +15,7 @@ from desktop_app.core.state import AppState
 from desktop_app.ui.pages.courses_page import CoursesPage
 from desktop_app.ui.pages.notifications_page import NotificationsPage
 from desktop_app.ui.pages.profile_page import ProfilePage
+from desktop_app.ui.theme import main_window_stylesheet
 
 
 class MainWindow(QMainWindow):
@@ -21,7 +23,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.state = state
         self.setWindowTitle("Система управления персоналом")
-        self.resize(1400, 860)
+        self.resize(1180, 760)
 
         root = QWidget()
         root_layout = QVBoxLayout(root)
@@ -36,6 +38,11 @@ class MainWindow(QMainWindow):
 
         body.addWidget(self._build_sidebar())
 
+        content_wrap = QFrame()
+        content_wrap.setObjectName("contentCard")
+        content_layout = QVBoxLayout(content_wrap)
+        content_layout.setContentsMargins(18, 18, 18, 18)
+
         self.stack = QStackedWidget()
         self.courses = CoursesPage(state)
         self.notifications = NotificationsPage(state)
@@ -45,7 +52,9 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.notifications)
         self.stack.addWidget(self.profile)
 
-        body.addWidget(self.stack, 1)
+        content_layout.addWidget(self.stack)
+        body.addWidget(content_wrap, 1)
+
         root_layout.addLayout(body, 1)
         self.setCentralWidget(root)
 
@@ -57,30 +66,40 @@ class MainWindow(QMainWindow):
         bar = QFrame()
         bar.setObjectName("topbar")
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(28, 20, 28, 20)
+        layout.setContentsMargins(20, 14, 20, 14)
+        layout.setSpacing(12)
 
         left = QVBoxLayout()
+        left.setSpacing(2)
+
         title = QLabel("Система управления персоналом")
         title.setObjectName("appTitle")
-        subtitle = QLabel("Учёт персонала, обучения и оценки эффективности")
+        subtitle = QLabel("Учёт персонала и обучения")
         subtitle.setObjectName("appSubtitle")
+
         left.addWidget(title)
         left.addWidget(subtitle)
 
         layout.addLayout(left)
         layout.addStretch(1)
+
+        logout_btn = QPushButton("Выйти")
+        logout_btn.setObjectName("logoutBtn")
+        logout_btn.clicked.connect(self.state.logout)
+        layout.addWidget(logout_btn)
+
         return bar
 
     def _build_sidebar(self) -> QWidget:
         side = QFrame()
         side.setObjectName("sidebar")
         layout = QVBoxLayout(side)
-        layout.setContentsMargins(14, 18, 14, 18)
+        layout.setContentsMargins(12, 14, 12, 14)
 
         self.nav = QListWidget()
+        self.nav.setObjectName("navList")
         for text in ["Библиотека курсов", "Уведомления", "Личный кабинет"]:
-            item = QListWidgetItem(text)
-            self.nav.addItem(item)
+            self.nav.addItem(QListWidgetItem(text))
 
         layout.addWidget(self.nav)
         return side
@@ -91,15 +110,4 @@ class MainWindow(QMainWindow):
         self.profile.refresh()
 
     def _apply_styles(self) -> None:
-        self.setStyleSheet(
-            """
-            QMainWindow { background: #f1f5f9; }
-            QFrame#topbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; }
-            QLabel#appTitle { font-size: 40px; font-weight: 700; color: #0b1730; }
-            QLabel#appSubtitle { font-size: 32px; color: #5b708f; }
-            QFrame#sidebar { background: #eef2f6; border-right: 1px solid #dbe3ec; min-width: 300px; max-width: 300px; }
-            QListWidget { border: none; background: transparent; font-size: 30px; color: #516888; }
-            QListWidget::item { padding: 18px; border-radius: 16px; margin: 8px 0; }
-            QListWidget::item:selected { background: #dde4ec; color: #0f172a; font-weight: 600; }
-            """
-        )
+        self.setStyleSheet(main_window_stylesheet())

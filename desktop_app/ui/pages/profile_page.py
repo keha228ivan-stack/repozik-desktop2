@@ -15,22 +15,31 @@ class ProfilePage(QWidget):
         super().__init__()
         self.state = state
 
+        title = QLabel("Личный кабинет")
+        title.setObjectName("pageTitle")
+
         self.full_name = QLineEdit()
         self.phone = QLineEdit()
+
         self.status = QLabel("")
-        self.status.setStyleSheet("color: #b45309;")
+        self.status.setObjectName("statusText")
 
         form = QFormLayout()
-        form.addRow("Full name", self.full_name)
-        form.addRow("Phone", self.phone)
+        form.setSpacing(10)
+        form.addRow("ФИО", self.full_name)
+        form.addRow("Телефон", self.phone)
 
-        save = QPushButton("Save")
+        save = QPushButton("Сохранить")
         save.clicked.connect(self._save)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(12)
+        layout.addWidget(title)
         layout.addLayout(form)
         layout.addWidget(self.status)
         layout.addWidget(save)
+        layout.addStretch(1)
         self.setLayout(layout)
 
         self.state.profile_changed.connect(self._set_profile)

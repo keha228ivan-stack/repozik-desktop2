@@ -7,16 +7,25 @@ class NotificationsPage(QWidget):
     def __init__(self, state: AppState) -> None:
         super().__init__()
         self.state = state
-        self.list = QListWidget()
-        self.status = QLabel("")
-        self.status.setStyleSheet("color: #b45309;")
 
-        refresh_btn = QPushButton("Повторить")
+        title = QLabel("Уведомления")
+        title.setObjectName("pageTitle")
+
+        self.list = QListWidget()
+        self.list.setObjectName("contentList")
+
+        self.status = QLabel("")
+        self.status.setObjectName("statusText")
+
+        refresh_btn = QPushButton("Обновить")
         refresh_btn.clicked.connect(self.refresh)
 
         layout = QVBoxLayout()
+        layout.setContentsMargins(4, 4, 4, 4)
+        layout.setSpacing(12)
+        layout.addWidget(title)
         layout.addWidget(self.status)
-        layout.addWidget(self.list)
+        layout.addWidget(self.list, 1)
         layout.addWidget(refresh_btn)
         self.setLayout(layout)
 
