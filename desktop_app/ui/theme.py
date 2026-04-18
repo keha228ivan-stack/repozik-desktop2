@@ -27,6 +27,8 @@ PALETTE = Palette()
 def login_stylesheet() -> str:
     p = PALETTE
     return f"""
+        QWidget:focus {{ outline: none; }}
+        QAbstractItemView:focus {{ outline: none; }}
         QWidget {{ background: {p.bg_app}; font-size: 14px; color: {p.text_primary}; }}
         QLabel#title {{ font-size: 30px; font-weight: 700; color: {p.text_primary}; }}
         QLabel#subtitle {{ font-size: 14px; color: {p.text_secondary}; margin-bottom: 8px; }}
@@ -45,6 +47,8 @@ def login_stylesheet() -> str:
 def main_window_stylesheet() -> str:
     p = PALETTE
     return f"""
+        QWidget:focus {{ outline: none; }}
+        QAbstractItemView:focus {{ outline: none; }}
         QMainWindow {{ background: {p.bg_app}; }}
 
         QFrame#topbar {{ background: {p.bg_surface}; border-bottom: 1px solid {p.border}; }}
