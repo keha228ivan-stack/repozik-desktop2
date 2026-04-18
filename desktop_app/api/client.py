@@ -1,5 +1,6 @@
 import os
 from typing import Any, Dict, Optional
+from urllib.parse import urlparse
 
 import requests
 
@@ -16,10 +17,22 @@ class ApiClient:
     def __init__(self) -> None:
         self.base_url = os.getenv("HR_API_BASE_URL", "http://localhost:3000/api").rstrip("/")
         self.session = requests.Session()
+        self._configure_proxy_behavior()
         self.store = SessionStore()
         token = self.store.get_token()
         if token:
             self.session.headers["Authorization"] = f"Bearer {token}"
+
+    def _configure_proxy_behavior(self) -> None:
+        """
+        Для локального API не используем системные HTTP(S)_PROXY:
+        в Windows они часто указывают на локальный прокси (например, 127.0.0.1:12334),
+        из-за чего запросы к localhost идут через него и обрываются.
+        """
+        parsed = urlparse(self.base_url)
+        local_hosts = {"localhost", "127.0.0.1", "::1"}
+        if parsed.hostname in local_hosts:
+            self.session.trust_env = False
 
     def set_token(self, token: Optional[str]) -> None:
         if token:

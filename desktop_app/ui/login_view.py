@@ -67,8 +67,11 @@ class LoginView(QWidget):
         btn = QPushButton("Войти")
         btn.setObjectName("primary")
         btn.clicked.connect(self._submit_login)
+        demo_hint = QLabel("Если API недоступен: demo@company.local / Demo12345!")
+        demo_hint.setObjectName("hint")
         form.addRow("Email", self.email)
         form.addRow("Пароль", self.password)
+        form.addRow("", demo_hint)
         form.addRow("", btn)
         return w
 

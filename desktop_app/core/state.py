@@ -38,6 +38,13 @@ class AppState(QObject):
         self.api = api
         self.user: Dict[str, Any] | None = None
         self.is_authenticated = False
+        self._demo_user = {
+            "id": "demo-user-1",
+            "fullName": "Demo Employee",
+            "email": "demo@company.local",
+            "role": "Сотрудник",
+        }
+        self._demo_password = "Demo12345!"
         self._bootstrap_session()
 
     def _bootstrap_session(self) -> None:
@@ -60,8 +67,24 @@ class AppState(QObject):
             self.auth_changed.emit(True)
             return True
         except ApiError as exc:
+            if self._try_offline_demo_login(email=email, password=password, error=exc):
+                return True
             self.error.emit(str(exc))
             return False
+
+    def _try_offline_demo_login(self, email: str, password: str, error: ApiError) -> bool:
+        """
+        Фолбэк для локальной проверки UI, когда backend недоступен.
+        Срабатывает только для сетевых ошибок и заранее известной демо-учётки.
+        """
+        if "Network error:" not in str(error):
+            return False
+        if email.lower() != self._demo_user["email"] or password != self._demo_password:
+            return False
+        self.user = dict(self._demo_user)
+        self.is_authenticated = True
+        self.auth_changed.emit(True)
+        return True
 
     def register(self, full_name: str, email: str, password: str) -> bool:
         try:
