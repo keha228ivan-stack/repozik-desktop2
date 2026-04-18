@@ -130,6 +130,17 @@ class AppState(QObject):
         self.auth_changed.emit(True)
         return True
 
+    def _try_offline_demo_login(self, email: str, password: str, error: ApiError) -> bool:
+        if "Не удалось подключиться к серверу" not in str(error) and "Сервер временно недоступен" not in str(error):
+            return False
+        if email.lower() != self._demo_user["email"] or password != self._demo_password:
+            return False
+        self.user = dict(self._demo_user)
+        self.is_authenticated = True
+        self.auth_changed.emit(True)
+        self._set_backend_status(False)
+        return True
+
     def register(self, full_name: str, email: str, password: str) -> bool:
         if self.offline_mode:
             self._emit_error("Сервер недоступен. Регистрация временно отключена в офлайн-режиме.")
