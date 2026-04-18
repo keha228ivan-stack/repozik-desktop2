@@ -193,9 +193,3 @@ class ApiClient:
 
     def mark_notification_read(self, notif_id: str) -> Dict[str, Any]:
         return self._request("PATCH", f"/notifications/{notif_id}/read")
-
-    def get_topics(self) -> Dict[str, Any]:
-        return self._request("GET", "/forum/topics")
-
-    def create_topic(self, title: str, body: str) -> Dict[str, Any]:
-        return self._request("POST", "/forum/topics", json={"title": title, "body": body})

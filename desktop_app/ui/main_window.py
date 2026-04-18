@@ -1,4 +1,3 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -6,7 +5,6 @@ from PySide6.QtWidgets import (
     QListWidget,
     QListWidgetItem,
     QMainWindow,
-    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -14,8 +12,6 @@ from PySide6.QtWidgets import (
 
 from desktop_app.core.state import AppState
 from desktop_app.ui.pages.courses_page import CoursesPage
-from desktop_app.ui.pages.dashboard_page import DashboardPage
-from desktop_app.ui.pages.forum_page import ForumPage
 from desktop_app.ui.pages.notifications_page import NotificationsPage
 from desktop_app.ui.pages.profile_page import ProfilePage
 
@@ -41,17 +37,13 @@ class MainWindow(QMainWindow):
         body.addWidget(self._build_sidebar())
 
         self.stack = QStackedWidget()
-        self.dashboard = DashboardPage(state)
-        self.profile = ProfilePage(state)
         self.courses = CoursesPage(state)
-        self.forum = ForumPage(state)
         self.notifications = NotificationsPage(state)
+        self.profile = ProfilePage(state)
 
-        self.stack.addWidget(self.dashboard)
-        self.stack.addWidget(self.profile)
         self.stack.addWidget(self.courses)
-        self.stack.addWidget(self.forum)
         self.stack.addWidget(self.notifications)
+        self.stack.addWidget(self.profile)
 
         body.addWidget(self.stack, 1)
         root_layout.addLayout(body, 1)
@@ -77,16 +69,6 @@ class MainWindow(QMainWindow):
 
         layout.addLayout(left)
         layout.addStretch(1)
-
-        layout.addWidget(QPushButton("🔔"))
-        layout.addWidget(QPushButton("⚙"))
-
-        role = QLabel("🧳 Менеджер")
-        role.setObjectName("roleBadge")
-        role.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        role.setFixedHeight(52)
-        role.setFixedWidth(190)
-        layout.addWidget(role)
         return bar
 
     def _build_sidebar(self) -> QWidget:
@@ -96,7 +78,7 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(14, 18, 14, 18)
 
         self.nav = QListWidget()
-        for text in ["Dashboard", "Сотрудники", "Обучение", "Форум", "Уведомления"]:
+        for text in ["Библиотека курсов", "Уведомления", "Личный кабинет"]:
             item = QListWidgetItem(text)
             self.nav.addItem(item)
 
@@ -104,11 +86,9 @@ class MainWindow(QMainWindow):
         return side
 
     def refresh_all_pages(self) -> None:
-        self.dashboard.refresh()
-        self.profile.refresh()
         self.courses.refresh()
-        self.forum.refresh()
         self.notifications.refresh()
+        self.profile.refresh()
 
     def _apply_styles(self) -> None:
         self.setStyleSheet(
@@ -117,11 +97,9 @@ class MainWindow(QMainWindow):
             QFrame#topbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; }
             QLabel#appTitle { font-size: 40px; font-weight: 700; color: #0b1730; }
             QLabel#appSubtitle { font-size: 32px; color: #5b708f; }
-            QLabel#roleBadge { border: 1px solid #cbd5e1; border-radius: 26px; background: #f8fafc; font-size: 26px; }
             QFrame#sidebar { background: #eef2f6; border-right: 1px solid #dbe3ec; min-width: 300px; max-width: 300px; }
             QListWidget { border: none; background: transparent; font-size: 30px; color: #516888; }
             QListWidget::item { padding: 18px; border-radius: 16px; margin: 8px 0; }
             QListWidget::item:selected { background: #dde4ec; color: #0f172a; font-weight: 600; }
-            QPushButton { background: transparent; border: none; font-size: 28px; min-width: 52px; }
             """
         )
