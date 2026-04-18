@@ -20,3 +20,27 @@ python -m desktop_app.main
 ```
 
 > Если в окружении не установлен PySide6, приложение стартует в безопасном режиме без traceback и выведет подсказку по установке зависимостей.
+
+## Диагностика API (PowerShell)
+
+Если на регистрации/логине появляется `Network error`, проверьте, что backend действительно запущен и доступен:
+
+```powershell
+$env:HR_API_BASE_URL = "http://localhost:3000/api"
+Invoke-RestMethod -Method GET -Uri "$env:HR_API_BASE_URL/health"
+```
+
+Если у backend нет `/health`, можно проверить endpoint регистрации:
+
+```powershell
+$body = @{
+  fullName = "Test User"
+  email    = "test$(Get-Random)@example.com"
+  password = "Password123!"
+  role     = "employee"
+} | ConvertTo-Json
+
+Invoke-RestMethod -Method POST -Uri "$env:HR_API_BASE_URL/auth/register" -ContentType "application/json" -Body $body
+```
+
+Приложение автоматически отключает системные proxy-переменные для `localhost/127.0.0.1`, чтобы запросы к локальному API не уходили в сторонний прокси.
