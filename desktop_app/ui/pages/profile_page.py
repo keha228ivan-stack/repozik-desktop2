@@ -1,7 +1,7 @@
 from PySide6.QtWidgets import (
     QFormLayout,
+    QLabel,
     QLineEdit,
-    QMessageBox,
     QPushButton,
     QVBoxLayout,
     QWidget,
@@ -17,6 +17,8 @@ class ProfilePage(QWidget):
 
         self.full_name = QLineEdit()
         self.phone = QLineEdit()
+        self.status = QLabel("")
+        self.status.setStyleSheet("color: #b45309;")
 
         form = QFormLayout()
         form.addRow("Full name", self.full_name)
@@ -27,21 +29,26 @@ class ProfilePage(QWidget):
 
         layout = QVBoxLayout()
         layout.addLayout(form)
+        layout.addWidget(self.status)
         layout.addWidget(save)
         self.setLayout(layout)
 
         self.state.profile_changed.connect(self._set_profile)
-        self.state.error.connect(self._show_error)
+        self.state.profile_error.connect(self._set_error)
 
     def refresh(self) -> None:
+        self.status.setText("Загрузка профиля...")
         self.state.load_profile()
 
     def _save(self) -> None:
+        self.status.setText("Сохранение...")
         self.state.save_profile({"fullName": self.full_name.text().strip(), "phone": self.phone.text().strip()})
 
     def _set_profile(self, p: dict) -> None:
         self.full_name.setText(p.get("fullName", ""))
         self.phone.setText(p.get("phone", ""))
+        if p:
+            self.status.setText("")
 
-    def _show_error(self, msg: str) -> None:
-        QMessageBox.warning(self, "Profile", msg)
+    def _set_error(self, msg: str) -> None:
+        self.status.setText(msg)
