@@ -125,7 +125,8 @@ class LoginView(QWidget):
         self.state.register(full_name, email, password)
 
     def _show_error(self, text: str) -> None:
-        QMessageBox.critical(self, "Ошибка", text)
+        if self.isVisible():
+            QMessageBox.critical(self, "Ошибка", text)
 
     def _apply_styles(self) -> None:
         self.setStyleSheet(

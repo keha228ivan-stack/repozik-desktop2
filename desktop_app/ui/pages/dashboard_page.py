@@ -24,8 +24,11 @@ class DashboardPage(QWidget):
         title.setObjectName("dashTitle")
         subtitle = QLabel("Обзор ключевых метрик системы")
         subtitle.setObjectName("dashSubtitle")
+        self.backend_status = QLabel("Проверка backend...")
+        self.backend_status.setObjectName("backendStatus")
         root.addWidget(title)
         root.addWidget(subtitle)
+        root.addWidget(self.backend_status)
 
         metrics = QGridLayout()
         metrics.setHorizontalSpacing(16)
@@ -48,6 +51,7 @@ class DashboardPage(QWidget):
         lower.addWidget(self._top_courses_panel(), 1)
         root.addLayout(lower, 1)
 
+        self.state.backend_status_changed.connect(self._set_backend_status)
         self._apply_styles()
 
     def _metric_card(self, icon: str, label: str, value: str, delta: str) -> QWidget:
@@ -112,7 +116,12 @@ class DashboardPage(QWidget):
         return frame
 
     def refresh(self) -> None:
-        return
+        self.state.refresh_backend_status()
+
+    def _set_backend_status(self, available: bool, message: str) -> None:
+        color = "#15803d" if available else "#b45309"
+        self.backend_status.setStyleSheet(f"color: {color}; font-size: 20px;")
+        self.backend_status.setText(message)
 
     def _apply_styles(self) -> None:
         self.setStyleSheet(

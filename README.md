@@ -16,6 +16,8 @@ python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 pip install -r requirements-desktop.txt
 $env:HR_API_BASE_URL = "http://localhost:3000/api"
+$env:HR_API_TIMEOUT_SEC = "8"
+$env:HR_API_HEALTH_PATH = "/health"
 python -m desktop_app.main
 ```
 
@@ -53,3 +55,10 @@ Invoke-RestMethod -Method POST -Uri "$env:HR_API_BASE_URL/auth/register" -Conten
 - Пароль: `Demo12345!`
 
 Демо-вход срабатывает только при сетевой ошибке API и только для этой пары логин/пароль.
+
+## Поведение при недоступном backend
+
+- UI не падает и продолжает работать в ограниченном режиме.
+- Вместо сырых сетевых ошибок показываются дружелюбные сообщения.
+- Для экранов Profile/Courses/Forum/Notifications показываются empty/error state и доступна повторная попытка загрузки.
+- Статус backend отображается в Dashboard.
