@@ -169,9 +169,10 @@ class AppState(QObject):
     def load_courses(self, q: str = "") -> None:
         if self.offline_mode:
             mock_courses = [
-                {"title": "Введение в HR-процессы"},
-                {"title": "Оценка эффективности сотрудников"},
-                {"title": "Коммуникация в команде"},
+                {"title": "Введение в HR-процессы", "status": "completed", "progress": 100},
+                {"title": "Оценка эффективности сотрудников", "status": "in_progress", "progress": 65},
+                {"title": "Коммуникация в команде", "status": "in_progress", "progress": 30},
+                {"title": "Трудовое законодательство", "status": "completed", "progress": 100},
             ]
             filtered = [c for c in mock_courses if q.lower() in c["title"].lower()] if q else mock_courses
             self.courses_changed.emit(filtered)

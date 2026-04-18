@@ -12,6 +12,7 @@ from PySide6.QtWidgets import (
 )
 
 from desktop_app.core.state import AppState
+from desktop_app.ui.pages.course_status_page import CourseStatusPage
 from desktop_app.ui.pages.courses_page import CoursesPage
 from desktop_app.ui.pages.notifications_page import NotificationsPage
 from desktop_app.ui.pages.profile_page import ProfilePage
@@ -45,10 +46,14 @@ class MainWindow(QMainWindow):
 
         self.stack = QStackedWidget()
         self.courses = CoursesPage(state)
+        self.courses_in_progress = CourseStatusPage(state, mode="in_progress")
+        self.courses_completed = CourseStatusPage(state, mode="completed")
         self.notifications = NotificationsPage(state)
         self.profile = ProfilePage(state)
 
         self.stack.addWidget(self.courses)
+        self.stack.addWidget(self.courses_in_progress)
+        self.stack.addWidget(self.courses_completed)
         self.stack.addWidget(self.notifications)
         self.stack.addWidget(self.profile)
 
@@ -98,7 +103,13 @@ class MainWindow(QMainWindow):
 
         self.nav = QListWidget()
         self.nav.setObjectName("navList")
-        for text in ["Библиотека курсов", "Уведомления", "Личный кабинет"]:
+        for text in [
+            "Библиотека курсов",
+            "Курсы в процессе",
+            "Завершенные курсы",
+            "Уведомления",
+            "Личный кабинет",
+        ]:
             self.nav.addItem(QListWidgetItem(text))
 
         layout.addWidget(self.nav)
@@ -106,6 +117,8 @@ class MainWindow(QMainWindow):
 
     def refresh_all_pages(self) -> None:
         self.courses.refresh()
+        self.courses_in_progress.refresh()
+        self.courses_completed.refresh()
         self.notifications.refresh()
         self.profile.refresh()
 
