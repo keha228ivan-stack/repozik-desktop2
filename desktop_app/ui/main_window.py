@@ -24,7 +24,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.state = state
         self.setWindowTitle("Система управления персоналом")
-        self.resize(1024, 800)
+        self.resize(1080, 800)
 
         root = QWidget()
         root_layout = QVBoxLayout(root)
@@ -56,6 +56,7 @@ class MainWindow(QMainWindow):
         root_layout.addLayout(body, 1)
         self.setCentralWidget(root)
 
+        self.nav.currentRowChanged.connect(self._on_nav_changed)
         self.nav.setCurrentRow(0)
         self._apply_styles()
 
@@ -63,53 +64,56 @@ class MainWindow(QMainWindow):
         bar = QFrame()
         bar.setObjectName("topbar")
         layout = QHBoxLayout(bar)
-        layout.setContentsMargins(28, 20, 28, 20)
+        layout.setContentsMargins(18, 12, 20, 12)
 
-        left = QVBoxLayout()
-        title = QLabel("Система управления персоналом")
-        title.setObjectName("appTitle")
-        subtitle = QLabel("Учёт персонала, обучения и оценки эффективности")
-        subtitle.setObjectName("appSubtitle")
-        left.addWidget(title)
-        left.addWidget(subtitle)
-
-        layout.addLayout(left)
+        brand = QLabel("◔ HRLMS")
+        brand.setObjectName("brand")
+        layout.addWidget(brand)
         layout.addStretch(1)
 
-        notifications_btn = QPushButton("🔔")
-        notifications_btn.setObjectName("topIconButton")
-        notifications_btn.setToolTip("Уведомления")
-        notifications_btn.clicked.connect(lambda: self.stack.setCurrentWidget(self.notifications))
+        self.notifications_btn = QPushButton("🔔")
+        self.notifications_btn.setObjectName("topIconButton")
+        self.notifications_btn.setToolTip("Уведомления")
+        self.notifications_btn.clicked.connect(lambda: self.stack.setCurrentIndex(4))
 
-        profile_btn = QPushButton("👤")
-        profile_btn.setObjectName("topIconButton")
-        profile_btn.setToolTip("Личный кабинет")
-        profile_btn.clicked.connect(lambda: self.stack.setCurrentWidget(self.profile))
+        self.profile_btn = QPushButton("👤")
+        self.profile_btn.setObjectName("topIconButton")
+        self.profile_btn.setToolTip("Личный кабинет")
+        self.profile_btn.clicked.connect(lambda: self.stack.setCurrentIndex(1))
 
-        layout.addWidget(notifications_btn)
-        layout.addWidget(profile_btn)
+        layout.addWidget(self.notifications_btn)
+        layout.addWidget(self.profile_btn)
         return bar
 
     def _build_sidebar(self) -> QWidget:
         side = QFrame()
         side.setObjectName("sidebar")
         layout = QVBoxLayout(side)
-        layout.setContentsMargins(14, 18, 14, 18)
+        layout.setContentsMargins(22, 20, 18, 20)
+
+        title = QLabel("Система управления\nперсоналом")
+        title.setObjectName("appTitle")
+        subtitle = QLabel("Мой прогресс и активные курсы")
+        subtitle.setObjectName("appSubtitle")
+        layout.addWidget(title)
+        layout.addWidget(subtitle)
+        layout.addSpacing(18)
 
         self.nav = QListWidget()
         self._nav_to_stack_index = [0, 2, 2, 2, 4, 1]
         for text in [
-            "◻ Dashboard",
-            "◻ Библиотека курсов",
-            "◌ Курсы в процессе",
-            "◉ Завершенные курсы",
-            "◌ Уведомления",
-            "◌ Личный кабинет",
+            "◻  Dashboard",
+            "◫  Библиотека курсов",
+            "◌  Курсы в процессе",
+            "◉  Завершенные курсы",
+            "◌  Уведомления",
+            "◌  Личный кабинет",
         ]:
-            self.nav.addItem(QListWidgetItem(text))
+            item = QListWidgetItem(text)
+            self.nav.addItem(item)
 
-        self.nav.currentRowChanged.connect(self._on_nav_changed)
         layout.addWidget(self.nav)
+        layout.addStretch(1)
         return side
 
     def _on_nav_changed(self, row: int) -> None:
@@ -128,13 +132,14 @@ class MainWindow(QMainWindow):
         self.setStyleSheet(
             """
             QMainWindow { background: #f3f4f6; }
-            QFrame#topbar { background: #f3f4f6; border-bottom: none; }
-            QLabel#appTitle { font-size: 56px; font-weight: 700; color: #1f2937; }
-            QLabel#appSubtitle { font-size: 40px; color: #6b7280; }
-            QFrame#sidebar { background: #f3f4f6; border-right: none; min-width: 290px; max-width: 290px; }
+            QFrame#topbar { background: #f3f4f6; border: none; }
+            QLabel#brand { font-size: 22px; color: #111827; font-weight: 600; }
+            QLabel#appTitle { font-size: 58px; font-weight: 700; color: #1f2937; line-height: 1.1; }
+            QLabel#appSubtitle { font-size: 40px; color: #6b7280; margin-bottom: 8px; }
+            QFrame#sidebar { background: #f3f4f6; border-right: 1px solid #e5e7eb; min-width: 320px; max-width: 320px; }
             QListWidget { border: none; background: transparent; font-size: 35px; color: #64748b; outline: none; }
-            QListWidget::item { padding: 14px 16px; border-radius: 12px; margin: 4px 0; }
-            QListWidget::item:selected { background: transparent; color: #2563eb; font-weight: 600; }
-            QPushButton#topIconButton { background: transparent; border: none; color: #64748b; font-size: 30px; min-width: 64px; }
+            QListWidget::item { padding: 13px 10px; border-radius: 10px; margin: 3px 0; }
+            QListWidget::item:selected { background: #e8eefc; color: #2563eb; font-weight: 600; }
+            QPushButton#topIconButton { background: transparent; border: none; color: #64748b; font-size: 28px; min-width: 48px; }
             """
         )
