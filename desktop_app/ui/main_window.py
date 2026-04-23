@@ -100,13 +100,13 @@ class MainWindow(QMainWindow):
         layout.addSpacing(34)
 
         self.nav = QListWidget()
-        self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
-        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         for text in [
-            "◫  Dashboard",
+            "◈  Dashboard",
             "◧  Библиотека курсов",
             "◌  Курсы в процессе",
-            "◉  Завершенные курсы",
+            "◎  Завершенные курсы",
             "◌  Уведомления",
             "◌  Личный кабинет",
         ]:
