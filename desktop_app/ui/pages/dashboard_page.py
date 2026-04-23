@@ -1,12 +1,4 @@
-from PySide6.QtWidgets import (
-    QFrame,
-    QGridLayout,
-    QHBoxLayout,
-    QLabel,
-    QProgressBar,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
@@ -17,125 +9,77 @@ class DashboardPage(QWidget):
         self.state = state
 
         root = QVBoxLayout(self)
-        root.setContentsMargins(32, 26, 32, 26)
-        root.setSpacing(18)
+        root.setContentsMargins(22, 16, 22, 20)
+
+        container = QFrame()
+        container.setObjectName("dashboardContainer")
+        content = QVBoxLayout(container)
+        content.setContentsMargins(36, 30, 36, 30)
+        content.setSpacing(18)
 
         title = QLabel("Dashboard")
         title.setObjectName("dashTitle")
-        subtitle = QLabel("Обзор ключевых метрик системы")
+        subtitle = QLabel("Обзор ключевых метрик обучения")
         subtitle.setObjectName("dashSubtitle")
-        self.backend_status = QLabel("Проверка backend...")
-        self.backend_status.setObjectName("backendStatus")
-        root.addWidget(title)
-        root.addWidget(subtitle)
-        root.addWidget(self.backend_status)
+        content.addWidget(title)
+        content.addWidget(subtitle)
 
-        metrics = QGridLayout()
-        metrics.setHorizontalSpacing(16)
-        metrics.setVerticalSpacing(16)
+        cards = QGridLayout()
+        cards.setHorizontalSpacing(16)
 
-        cards = [
-            ("👥", "Всего сотрудников", "6", "+12%"),
-            ("🟢", "Активных", "5", "+5%"),
-            ("📈", "Средняя оценка", "89%", "+3%"),
-            ("📘", "Пройдено курсов", "33", "+18%"),
-        ]
-        for idx, card in enumerate(cards):
-            metrics.addWidget(self._metric_card(*card), 0, idx)
+        cards.addWidget(self._metric_card("Всего курсов", "0"), 0, 0)
+        cards.addWidget(self._metric_card("Активные", "0"), 0, 1)
+        cards.addWidget(self._metric_card("Завершено", "0"), 0, 2)
+        content.addLayout(cards)
 
-        root.addLayout(metrics)
+        courses = QFrame()
+        courses.setObjectName("coursesCard")
+        courses_layout = QVBoxLayout(courses)
+        courses_layout.addWidget(QLabel("Мои курсы"))
+        content.addWidget(courses)
 
-        lower = QHBoxLayout()
-        lower.setSpacing(16)
-        lower.addWidget(self._activity_panel(), 1)
-        lower.addWidget(self._top_courses_panel(), 1)
-        root.addLayout(lower, 1)
+        toast = QLabel("Вход выполнен")
+        toast.setObjectName("toast")
+        content.addWidget(toast)
+        content.addStretch(1)
 
-        self.state.backend_status_changed.connect(self._set_backend_status)
+        root.addWidget(container)
         self._apply_styles()
 
-    def _metric_card(self, icon: str, label: str, value: str, delta: str) -> QWidget:
-        frame = QFrame()
-        frame.setObjectName("metricCard")
-        layout = QVBoxLayout(frame)
-
-        top = QHBoxLayout()
-        icon_lbl = QLabel(icon)
-        icon_lbl.setObjectName("icon")
-        delta_lbl = QLabel(delta)
-        delta_lbl.setObjectName("delta")
-        top.addWidget(icon_lbl)
-        top.addStretch(1)
-        top.addWidget(delta_lbl)
-
-        text = QLabel(label)
-        text.setObjectName("metricLabel")
-        val = QLabel(value)
-        val.setObjectName("metricValue")
-
-        layout.addLayout(top)
-        layout.addWidget(text)
-        layout.addWidget(val)
+    def _metric_card(self, title: str, value: str) -> QWidget:
+        card = QFrame()
+        card.setObjectName("metricCard")
+        layout = QVBoxLayout(card)
+        top = QLabel(title)
+        top.setObjectName("metricTitle")
+        number = QLabel(value)
+        number.setObjectName("metricValue")
+        layout.addWidget(top)
+        layout.addWidget(number)
         layout.addStretch(1)
-        return frame
-
-    def _activity_panel(self) -> QWidget:
-        frame = QFrame()
-        frame.setObjectName("panel")
-        layout = QVBoxLayout(frame)
-        layout.addWidget(QLabel("Последние действия"))
-        layout.addWidget(QLabel("Иванов Иван завершил курс — 5 минут назад"))
-        layout.addWidget(QLabel("Петрова Мария начала курс — 23 минуты назад"))
-        layout.addWidget(QLabel("Сидоров Алексей прошёл тест — 52 минуты назад"))
-        layout.addStretch(1)
-        return frame
-
-    def _top_courses_panel(self) -> QWidget:
-        frame = QFrame()
-        frame.setObjectName("panel")
-        layout = QVBoxLayout(frame)
-        layout.addWidget(QLabel("Топ курсов по популярности"))
-
-        for title, progress, people in [
-            ("React для начинающих", 85, "24 чел."),
-            ("Управление проектами", 70, "18 чел."),
-            ("UI/UX дизайн", 90, "15 чел."),
-        ]:
-            row = QHBoxLayout()
-            row.addWidget(QLabel(title))
-            row.addStretch(1)
-            row.addWidget(QLabel(people))
-            layout.addLayout(row)
-            bar = QProgressBar()
-            bar.setRange(0, 100)
-            bar.setValue(progress)
-            bar.setTextVisible(False)
-            layout.addWidget(bar)
-
-        layout.addStretch(1)
-        return frame
+        return card
 
     def refresh(self) -> None:
         self.state.refresh_backend_status()
 
-    def _set_backend_status(self, available: bool, message: str) -> None:
-        color = "#15803d" if available else "#b45309"
-        self.backend_status.setStyleSheet(f"color: {color}; font-size: 20px;")
-        self.backend_status.setText(message)
-
     def _apply_styles(self) -> None:
         self.setStyleSheet(
             """
-            QLabel#dashTitle { font-size: 44px; font-weight: 700; color: #0f172a; }
-            QLabel#dashSubtitle { font-size: 30px; color: #5a718f; margin-bottom: 8px; }
-            QFrame#metricCard { background: #fff; border: 1px solid #d9e2ec; border-radius: 18px; min-height: 210px; }
-            QLabel#icon { font-size: 28px; }
-            QLabel#delta { font-size: 28px; color: #10b981; }
-            QLabel#metricLabel { font-size: 31px; color: #5b708f; }
-            QLabel#metricValue { font-size: 48px; font-weight: 700; color: #0f172a; }
-            QFrame#panel { background: #fff; border: 1px solid #d9e2ec; border-radius: 18px; padding: 8px; }
-            QFrame#panel QLabel { font-size: 30px; color: #0f172a; margin: 6px 0; }
-            QProgressBar { border: 0; background: #e2e8f0; border-radius: 4px; height: 10px; }
-            QProgressBar::chunk { background: #f59e0b; border-radius: 4px; }
+            QFrame#dashboardContainer { background: #e9edf3; border-radius: 0px; }
+            QLabel#dashTitle { font-size: 48px; font-weight: 700; color: #1f2937; }
+            QLabel#dashSubtitle { font-size: 40px; color: #6b7280; margin-bottom: 6px; }
+            QFrame#metricCard { background: #f8fafc; border-radius: 18px; min-height: 200px; }
+            QLabel#metricTitle { font-size: 38px; color: #737373; margin: 10px; }
+            QLabel#metricValue { font-size: 64px; font-weight: 700; color: #202124; margin: 10px; }
+            QFrame#coursesCard { background: #f8fafc; border-radius: 18px; min-height: 95px; }
+            QFrame#coursesCard QLabel { font-size: 52px; font-weight: 600; color: #2f343b; margin: 8px; }
+            QLabel#toast {
+                background: #2f3136;
+                color: #ffffff;
+                border-radius: 14px;
+                font-size: 50px;
+                padding: 16px 28px;
+                max-width: 330px;
+            }
             """
         )
