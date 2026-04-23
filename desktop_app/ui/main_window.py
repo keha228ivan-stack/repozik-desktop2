@@ -100,6 +100,8 @@ class MainWindow(QMainWindow):
         layout.addSpacing(34)
 
         self.nav = QListWidget()
+        self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
+        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarPolicy.ScrollBarAlwaysOff)
         for text in [
             "◫  Dashboard",
             "◧  Библиотека курсов",
@@ -143,19 +145,19 @@ class MainWindow(QMainWindow):
                 min-width: 320px;
                 max-width: 320px;
             }
-            QLabel#appTitle { font-size: 58px; font-weight: 700; color: #24292f; }
-            QLabel#appSubtitle { font-size: 44px; color: #70757e; margin-top: 2px; }
+            QLabel#appTitle { font-size: 22px; font-weight: 700; color: #24292f; }
+            QLabel#appSubtitle { font-size: 14px; color: #70757e; margin-top: 2px; }
             QListWidget {
                 border: none;
                 background: transparent;
                 color: #5f7392;
-                font-size: 38px;
+                font-size: 14px;
                 outline: none;
             }
             QListWidget::item {
-                padding: 12px 10px;
-                border-radius: 12px;
-                margin: 2px 0;
+                padding: 8px 10px;
+                border-radius: 10px;
+                margin: 3px 0;
             }
             QListWidget::item:selected {
                 background: transparent;

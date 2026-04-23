@@ -61,12 +61,12 @@ class DashboardPage(QWidget):
         self.setStyleSheet(
             """
             QFrame#dashboardContainer { background: #e8ebf1; border-radius: 0; }
-            QLabel#dashTitle { font-size: 62px; font-weight: 700; color: #252a30; }
-            QLabel#dashSubtitle { font-size: 50px; color: #757b85; margin-bottom: 8px; }
-            QFrame#metricCard { background: #f7f7f8; border-radius: 18px; min-height: 230px; }
-            QLabel#metricLabel { font-size: 45px; color: #7b8087; padding: 8px 10px 0 10px; }
-            QLabel#metricValue { font-size: 84px; font-weight: 700; color: #21252b; padding: 0 10px 10px 10px; }
+            QLabel#dashTitle { font-size: 22px; font-weight: 700; color: #252a30; }
+            QLabel#dashSubtitle { font-size: 14px; color: #757b85; margin-bottom: 8px; }
+            QFrame#metricCard { background: #f7f7f8; border-radius: 18px; min-height: 150px; }
+            QLabel#metricLabel { font-size: 14px; color: #7b8087; padding: 8px 10px 0 10px; }
+            QLabel#metricValue { font-size: 34px; font-weight: 700; color: #21252b; padding: 0 10px 10px 10px; }
             QFrame#coursesCard { background: #f7f7f8; border-radius: 18px; min-height: 95px; }
-            QFrame#coursesCard QLabel { font-size: 55px; font-weight: 700; color: #2f343b; padding: 8px 10px; }
+            QFrame#coursesCard QLabel { font-size: 16px; font-weight: 700; color: #2f343b; padding: 8px 10px; }
             """
         )
