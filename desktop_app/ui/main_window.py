@@ -57,7 +57,6 @@ class MainWindow(QMainWindow):
         root_layout.addLayout(body, 1)
         self.setCentralWidget(root)
 
-        self.nav.currentRowChanged.connect(self.stack.setCurrentIndex)
         self.nav.setCurrentRow(0)
         self._apply_styles()
 
@@ -78,8 +77,18 @@ class MainWindow(QMainWindow):
         layout.addLayout(left)
         layout.addStretch(1)
 
-        layout.addWidget(QPushButton("🔔"))
-        layout.addWidget(QPushButton("⚙"))
+        notifications_btn = QPushButton("🔔")
+        notifications_btn.setObjectName("topIconButton")
+        notifications_btn.setToolTip("Уведомления")
+        notifications_btn.clicked.connect(lambda: self.stack.setCurrentWidget(self.notifications))
+
+        profile_btn = QPushButton("👤")
+        profile_btn.setObjectName("topIconButton")
+        profile_btn.setToolTip("Личный кабинет")
+        profile_btn.clicked.connect(lambda: self.stack.setCurrentWidget(self.profile))
+
+        layout.addWidget(notifications_btn)
+        layout.addWidget(profile_btn)
 
         role = QLabel("🧳 Менеджер")
         role.setObjectName("roleBadge")
@@ -96,12 +105,18 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(14, 18, 14, 18)
 
         self.nav = QListWidget()
-        for text in ["Dashboard", "Сотрудники", "Обучение", "Форум", "Уведомления"]:
-            item = QListWidgetItem(text)
-            self.nav.addItem(item)
+        self._nav_to_stack_index = [0, 2, 3, 4]
+        for text in ["Dashboard", "Обучение", "Форум", "Уведомления"]:
+            self.nav.addItem(QListWidgetItem(text))
 
+        self.nav.currentRowChanged.connect(self._on_nav_changed)
         layout.addWidget(self.nav)
         return side
+
+    def _on_nav_changed(self, row: int) -> None:
+        if row < 0 or row >= len(self._nav_to_stack_index):
+            return
+        self.stack.setCurrentIndex(self._nav_to_stack_index[row])
 
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
@@ -122,6 +137,6 @@ class MainWindow(QMainWindow):
             QListWidget { border: none; background: transparent; font-size: 30px; color: #516888; }
             QListWidget::item { padding: 18px; border-radius: 16px; margin: 8px 0; }
             QListWidget::item:selected { background: #dde4ec; color: #0f172a; font-weight: 600; }
-            QPushButton { background: transparent; border: none; font-size: 28px; min-width: 52px; }
+            QPushButton#topIconButton { background: transparent; border: none; font-size: 28px; min-width: 52px; }
             """
         )
