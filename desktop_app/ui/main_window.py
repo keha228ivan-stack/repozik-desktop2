@@ -18,6 +18,12 @@ from desktop_app.ui.pages.forum_page import ForumPage
 from desktop_app.ui.pages.notifications_page import NotificationsPage
 from desktop_app.ui.pages.profile_page import ProfilePage
 
+SCROLLBAR_ALWAYS_OFF = (
+    Qt.ScrollBarAlwaysOff
+    if hasattr(Qt, "ScrollBarAlwaysOff")
+    else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
+)
+
 
 class MainWindow(QMainWindow):
     def __init__(self, state: AppState) -> None:
@@ -100,8 +106,8 @@ class MainWindow(QMainWindow):
         layout.addSpacing(34)
 
         self.nav = QListWidget()
-        self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.nav.setVerticalScrollBarPolicy(SCROLLBAR_ALWAYS_OFF)
+        self.nav.setHorizontalScrollBarPolicy(SCROLLBAR_ALWAYS_OFF)
         for text in [
             "◈  Dashboard",
             "◧  Библиотека курсов",
