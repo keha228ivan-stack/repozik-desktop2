@@ -1,4 +1,3 @@
-from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
@@ -25,7 +24,7 @@ class MainWindow(QMainWindow):
         super().__init__()
         self.state = state
         self.setWindowTitle("Система управления персоналом")
-        self.resize(1400, 860)
+        self.resize(1024, 800)
 
         root = QWidget()
         root_layout = QVBoxLayout(root)
@@ -89,13 +88,6 @@ class MainWindow(QMainWindow):
 
         layout.addWidget(notifications_btn)
         layout.addWidget(profile_btn)
-
-        role = QLabel("🧳 Менеджер")
-        role.setObjectName("roleBadge")
-        role.setAlignment(Qt.AlignmentFlag.AlignCenter)
-        role.setFixedHeight(52)
-        role.setFixedWidth(190)
-        layout.addWidget(role)
         return bar
 
     def _build_sidebar(self) -> QWidget:
@@ -105,8 +97,15 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(14, 18, 14, 18)
 
         self.nav = QListWidget()
-        self._nav_to_stack_index = [0, 2, 3, 4]
-        for text in ["Dashboard", "Обучение", "Форум", "Уведомления"]:
+        self._nav_to_stack_index = [0, 2, 2, 2, 4, 1]
+        for text in [
+            "◻ Dashboard",
+            "◻ Библиотека курсов",
+            "◌ Курсы в процессе",
+            "◉ Завершенные курсы",
+            "◌ Уведомления",
+            "◌ Личный кабинет",
+        ]:
             self.nav.addItem(QListWidgetItem(text))
 
         self.nav.currentRowChanged.connect(self._on_nav_changed)
@@ -128,15 +127,14 @@ class MainWindow(QMainWindow):
     def _apply_styles(self) -> None:
         self.setStyleSheet(
             """
-            QMainWindow { background: #f1f5f9; }
-            QFrame#topbar { background: #ffffff; border-bottom: 1px solid #e2e8f0; }
-            QLabel#appTitle { font-size: 40px; font-weight: 700; color: #0b1730; }
-            QLabel#appSubtitle { font-size: 32px; color: #5b708f; }
-            QLabel#roleBadge { border: 1px solid #cbd5e1; border-radius: 26px; background: #f8fafc; font-size: 26px; }
-            QFrame#sidebar { background: #eef2f6; border-right: 1px solid #dbe3ec; min-width: 300px; max-width: 300px; }
-            QListWidget { border: none; background: transparent; font-size: 30px; color: #516888; }
-            QListWidget::item { padding: 18px; border-radius: 16px; margin: 8px 0; }
-            QListWidget::item:selected { background: #dde4ec; color: #0f172a; font-weight: 600; }
-            QPushButton#topIconButton { background: transparent; border: none; font-size: 28px; min-width: 52px; }
+            QMainWindow { background: #f3f4f6; }
+            QFrame#topbar { background: #f3f4f6; border-bottom: none; }
+            QLabel#appTitle { font-size: 56px; font-weight: 700; color: #1f2937; }
+            QLabel#appSubtitle { font-size: 40px; color: #6b7280; }
+            QFrame#sidebar { background: #f3f4f6; border-right: none; min-width: 290px; max-width: 290px; }
+            QListWidget { border: none; background: transparent; font-size: 35px; color: #64748b; outline: none; }
+            QListWidget::item { padding: 14px 16px; border-radius: 12px; margin: 4px 0; }
+            QListWidget::item:selected { background: transparent; color: #2563eb; font-weight: 600; }
+            QPushButton#topIconButton { background: transparent; border: none; color: #64748b; font-size: 30px; min-width: 64px; }
             """
         )
