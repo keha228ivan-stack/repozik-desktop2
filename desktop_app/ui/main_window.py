@@ -85,6 +85,9 @@ class MainWindow(QMainWindow):
         return bar
 
     def _build_sidebar(self) -> QWidget:
+        # Local import for extra runtime safety in bundled/partial environments.
+        from PySide6.QtWidgets import QListWidget, QListWidgetItem
+
         side = QFrame()
         side.setObjectName("sidebar")
         layout = QVBoxLayout(side)
