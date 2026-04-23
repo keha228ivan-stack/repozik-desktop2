@@ -1,3 +1,5 @@
+# NOTE: this project uses PySide6 (not PyQt), so Qt must be imported from PySide6.QtCore.
+from PySide6.QtCore import Qt
 from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
