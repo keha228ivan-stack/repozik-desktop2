@@ -5,7 +5,6 @@ from PySide6.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QPushButton,
     QStackedWidget,
     QVBoxLayout,
     QWidget,
@@ -69,19 +68,6 @@ class MainWindow(QMainWindow):
         brand.setObjectName("brand")
         layout.addWidget(brand)
         layout.addStretch(1)
-
-        notifications_btn = QPushButton("🔔")
-        notifications_btn.setObjectName("topIconButton")
-        notifications_btn.setToolTip("Уведомления")
-        notifications_btn.clicked.connect(lambda: self.stack.setCurrentIndex(4))
-
-        profile_btn = QPushButton("👤")
-        profile_btn.setObjectName("topIconButton")
-        profile_btn.setToolTip("Личный кабинет")
-        profile_btn.clicked.connect(lambda: self.stack.setCurrentIndex(1))
-
-        layout.addWidget(notifications_btn)
-        layout.addWidget(profile_btn)
         return bar
 
     def _build_sidebar(self) -> QWidget:
@@ -93,8 +79,9 @@ class MainWindow(QMainWindow):
         layout = QVBoxLayout(side)
         layout.setContentsMargins(30, 14, 22, 14)
 
-        title = QLabel("Система управления персоналом")
+        title = QLabel("Система управления\nперсоналом")
         title.setObjectName("appTitle")
+        title.setWordWrap(True)
         subtitle = QLabel("Мой прогресс и активные курсы")
         subtitle.setObjectName("appSubtitle")
         layout.addWidget(title)
@@ -105,7 +92,6 @@ class MainWindow(QMainWindow):
         self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.nav.setSpacing(2)
-        self.nav.setFixedHeight(230)
         for text in [
             "◈  Dashboard",
             "◧  Библиотека курсов",
@@ -136,20 +122,13 @@ class MainWindow(QMainWindow):
             QMainWindow { background: #f2f2f3; }
             QFrame#topbar { background: #f2f2f3; border: none; min-height: 42px; max-height: 42px; }
             QLabel#brand { font-size: 30px; font-weight: 500; color: #111827; padding-left: 2px; }
-            QPushButton#topIconButton {
-                background: transparent;
-                border: none;
-                color: #64748b;
-                font-size: 32px;
-                min-width: 54px;
-            }
             QFrame#sidebar {
                 background: #f2f2f3;
                 border-right: 1px solid #e5e7eb;
                 min-width: 320px;
                 max-width: 320px;
             }
-            QLabel#appTitle { font-size: 22px; font-weight: 700; color: #24292f; }
+            QLabel#appTitle { font-size: 18px; font-weight: 700; color: #24292f; }
             QLabel#appSubtitle { font-size: 14px; color: #70757e; margin-top: 2px; }
             QListWidget {
                 border: none;
