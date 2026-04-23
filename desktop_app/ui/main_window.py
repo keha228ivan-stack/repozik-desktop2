@@ -88,10 +88,15 @@ class MainWindow(QMainWindow):
         layout.addLayout(left)
         layout.addStretch(1)
 
-        logout_btn = QPushButton("Выйти")
-        logout_btn.setObjectName("logoutBtn")
-        logout_btn.clicked.connect(self.state.logout)
-        layout.addWidget(logout_btn)
+        notifications_btn = QPushButton("🔔")
+        notifications_btn.setObjectName("topIconBtn")
+        notifications_btn.clicked.connect(self._open_notifications)
+        layout.addWidget(notifications_btn)
+
+        profile_btn = QPushButton("👤")
+        profile_btn.setObjectName("topIconBtn")
+        profile_btn.clicked.connect(self._open_profile)
+        layout.addWidget(profile_btn)
 
         return bar
 
@@ -108,7 +113,6 @@ class MainWindow(QMainWindow):
             "Курсы в процессе",
             "Завершенные курсы",
             "Уведомления",
-            "Личный кабинет",
         ]:
             self.nav.addItem(QListWidgetItem(text))
 
@@ -121,6 +125,13 @@ class MainWindow(QMainWindow):
         self.courses_completed.refresh()
         self.notifications.refresh()
         self.profile.refresh()
+
+    def _open_notifications(self) -> None:
+        self.stack.setCurrentIndex(3)
+        self.nav.setCurrentRow(3)
+
+    def _open_profile(self) -> None:
+        self.stack.setCurrentIndex(4)
 
     def _apply_styles(self) -> None:
         self.setStyleSheet(main_window_stylesheet())

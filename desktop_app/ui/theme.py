@@ -54,15 +54,17 @@ def main_window_stylesheet() -> str:
         QFrame#topbar {{ background: {p.bg_surface}; border-bottom: 1px solid {p.border}; }}
         QLabel#appTitle {{ font-size: 24px; font-weight: 700; color: {p.text_primary}; }}
         QLabel#appSubtitle {{ font-size: 13px; color: {p.text_secondary}; }}
-        QPushButton#logoutBtn {{
+        QPushButton#topIconBtn {{
             background: transparent;
-            border: 1px solid {p.border};
+            border: 1px solid transparent;
             border-radius: 10px;
-            padding: 8px 14px;
-            color: {p.text_primary};
-            font-weight: 600;
+            min-width: 36px;
+            min-height: 36px;
+            font-size: 20px;
+            color: #64748b;
+            padding: 2px;
         }}
-        QPushButton#logoutBtn:hover {{ background: {p.bg_surface_alt}; }}
+        QPushButton#topIconBtn:hover {{ background: {p.bg_surface_alt}; }}
 
         QFrame#sidebar {{
             background: {p.nav_bg};
@@ -96,6 +98,14 @@ def main_window_stylesheet() -> str:
         }}
         QLabel#pageTitle {{ font-size: 20px; font-weight: 700; color: {p.text_primary}; }}
         QLabel#statusText {{ color: {p.warning}; font-size: 13px; }}
+        QFrame#profileCard {{
+            background: {p.bg_surface_alt};
+            border: 1px solid {p.border};
+            border-radius: 14px;
+            padding: 10px;
+        }}
+        QLabel#profileCardTitle {{ font-size: 26px; font-weight: 700; color: #1f2937; }}
+        QLabel#profileValue {{ font-size: 20px; color: #1f2937; }}
 
         QLineEdit {{
             border: 1px solid {p.border};

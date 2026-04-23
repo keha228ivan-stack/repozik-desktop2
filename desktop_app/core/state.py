@@ -139,7 +139,11 @@ class AppState(QObject):
     def load_profile(self) -> None:
         if self.offline_mode:
             self.profile_changed.emit(
-                {"fullName": self._demo_user["fullName"], "phone": "+7 (900) 000-00-00"}
+                {
+                    "fullName": self._demo_user["fullName"],
+                    "email": self._demo_user["email"],
+                    "role": self._demo_user["role"],
+                }
             )
             self.profile_error.emit("")
             return
