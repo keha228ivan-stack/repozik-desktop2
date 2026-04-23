@@ -55,7 +55,8 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root)
 
         self._nav_to_stack_index = [0, 2, 2, 2, 4, 1]
-        self._set_active_nav(0)
+        self.nav.currentRowChanged.connect(self._on_nav_changed)
+        self.nav.setCurrentRow(0)
         self._apply_styles()
 
     def _build_topbar(self) -> QWidget:
@@ -97,34 +98,27 @@ class MainWindow(QMainWindow):
         layout.addWidget(subtitle)
         layout.addSpacing(34)
 
-        self.nav_buttons: list[QPushButton] = []
-        for index, text in enumerate([
+        self.nav = QListWidget()
+        self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
+        self.nav.setSpacing(2)
+        self.nav.setFixedHeight(230)
+        for text in [
             "◈  Dashboard",
             "◧  Библиотека курсов",
             "◌  Курсы в процессе",
             "◎  Завершенные курсы",
             "◌  Уведомления",
             "◌  Личный кабинет",
-        ]):
-            btn = QPushButton(text)
-            btn.setObjectName("navButton")
-            btn.setCursor(Qt.CursorShape.PointingHandCursor)
-            btn.clicked.connect(lambda _checked=False, i=index: self._on_nav_changed(i))
-            self.nav_buttons.append(btn)
-            layout.addWidget(btn)
+        ]:
+            self.nav.addItem(QListWidgetItem(text))
+        layout.addWidget(self.nav)
         layout.addStretch(1)
         return side
 
     def _on_nav_changed(self, row: int) -> None:
         if 0 <= row < len(self._nav_to_stack_index):
             self.stack.setCurrentIndex(self._nav_to_stack_index[row])
-            self._set_active_nav(row)
-
-    def _set_active_nav(self, active_row: int) -> None:
-        for index, button in enumerate(self.nav_buttons):
-            button.setProperty("active", index == active_row)
-            button.style().unpolish(button)
-            button.style().polish(button)
 
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
@@ -154,17 +148,19 @@ class MainWindow(QMainWindow):
             }
             QLabel#appTitle { font-size: 22px; font-weight: 700; color: #24292f; }
             QLabel#appSubtitle { font-size: 14px; color: #70757e; margin-top: 2px; }
-            QPushButton#navButton {
+            QListWidget {
                 border: none;
                 background: transparent;
                 color: #5f7392;
                 font-size: 14px;
-                text-align: left;
+                outline: none;
+            }
+            QListWidget::item {
                 padding: 8px 10px;
                 border-radius: 10px;
                 margin: 3px 0;
             }
-            QPushButton#navButton[active="true"] {
+            QListWidget::item:selected {
                 background: transparent;
                 color: #2b61df;
                 font-weight: 500;
