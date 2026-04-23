@@ -4,8 +4,6 @@ from PySide6.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
-    QListWidget,
-    QListWidgetItem,
     QMainWindow,
     QPushButton,
     QStackedWidget,
@@ -19,13 +17,6 @@ from desktop_app.ui.pages.dashboard_page import DashboardPage
 from desktop_app.ui.pages.forum_page import ForumPage
 from desktop_app.ui.pages.notifications_page import NotificationsPage
 from desktop_app.ui.pages.profile_page import ProfilePage
-
-SCROLLBAR_ALWAYS_OFF = (
-    Qt.ScrollBarAlwaysOff
-    if hasattr(Qt, "ScrollBarAlwaysOff")
-    else Qt.ScrollBarPolicy.ScrollBarAlwaysOff
-)
-
 
 class MainWindow(QMainWindow):
     def __init__(self, state: AppState) -> None:
@@ -64,8 +55,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root)
 
         self._nav_to_stack_index = [0, 2, 2, 2, 4, 1]
-        self.nav.currentRowChanged.connect(self._on_nav_changed)
-        self.nav.setCurrentRow(0)
+        self._set_active_nav(0)
         self._apply_styles()
 
     def _build_topbar(self) -> QWidget:
@@ -107,25 +97,34 @@ class MainWindow(QMainWindow):
         layout.addWidget(subtitle)
         layout.addSpacing(34)
 
-        self.nav = QListWidget()
-        self.nav.setVerticalScrollBarPolicy(SCROLLBAR_ALWAYS_OFF)
-        self.nav.setHorizontalScrollBarPolicy(SCROLLBAR_ALWAYS_OFF)
-        for text in [
+        self.nav_buttons: list[QPushButton] = []
+        for index, text in enumerate([
             "◈  Dashboard",
             "◧  Библиотека курсов",
             "◌  Курсы в процессе",
             "◎  Завершенные курсы",
             "◌  Уведомления",
             "◌  Личный кабинет",
-        ]:
-            self.nav.addItem(QListWidgetItem(text))
-        layout.addWidget(self.nav)
+        ]):
+            btn = QPushButton(text)
+            btn.setObjectName("navButton")
+            btn.setCursor(Qt.CursorShape.PointingHandCursor)
+            btn.clicked.connect(lambda _checked=False, i=index: self._on_nav_changed(i))
+            self.nav_buttons.append(btn)
+            layout.addWidget(btn)
         layout.addStretch(1)
         return side
 
     def _on_nav_changed(self, row: int) -> None:
         if 0 <= row < len(self._nav_to_stack_index):
             self.stack.setCurrentIndex(self._nav_to_stack_index[row])
+            self._set_active_nav(row)
+
+    def _set_active_nav(self, active_row: int) -> None:
+        for index, button in enumerate(self.nav_buttons):
+            button.setProperty("active", index == active_row)
+            button.style().unpolish(button)
+            button.style().polish(button)
 
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
@@ -155,19 +154,17 @@ class MainWindow(QMainWindow):
             }
             QLabel#appTitle { font-size: 22px; font-weight: 700; color: #24292f; }
             QLabel#appSubtitle { font-size: 14px; color: #70757e; margin-top: 2px; }
-            QListWidget {
+            QPushButton#navButton {
                 border: none;
                 background: transparent;
                 color: #5f7392;
                 font-size: 14px;
-                outline: none;
-            }
-            QListWidget::item {
+                text-align: left;
                 padding: 8px 10px;
                 border-radius: 10px;
                 margin: 3px 0;
             }
-            QListWidget::item:selected {
+            QPushButton#navButton[active="true"] {
                 background: transparent;
                 color: #2b61df;
                 font-weight: 500;
