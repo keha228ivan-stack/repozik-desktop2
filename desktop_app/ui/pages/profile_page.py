@@ -38,6 +38,20 @@ class ProfilePage(QWidget):
         profile_layout.addWidget(self.email_label)
         profile_layout.addWidget(self.role_label)
 
+        self.profile_card = QFrame()
+        self.profile_card.setObjectName("profileCard")
+        card_layout = QVBoxLayout(self.profile_card)
+        card_title = QLabel("Данные профиля")
+        card_title.setObjectName("profileCardTitle")
+        card_layout.addWidget(card_title)
+
+        self.name_label = QLabel("Имя: —")
+        self.email_label = QLabel("Email: —")
+        self.role_label = QLabel("Роль: —")
+        for label in (self.name_label, self.email_label, self.role_label):
+            label.setObjectName("profileCardText")
+            card_layout.addWidget(label)
+
         form = QFormLayout()
         form.setLabelAlignment(Qt.AlignmentFlag.AlignLeft)
         form.addRow("Full name", self.full_name)
