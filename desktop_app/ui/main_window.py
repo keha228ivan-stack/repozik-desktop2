@@ -26,6 +26,7 @@ class MainWindow(QMainWindow):
         self.resize(1920, 1080)
 
         root = QWidget()
+        root.setObjectName("appRoot")
         root_layout = QVBoxLayout(root)
         root_layout.setContentsMargins(0, 0, 0, 0)
         root_layout.setSpacing(0)
