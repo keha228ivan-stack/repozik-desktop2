@@ -128,6 +128,7 @@ class MainWindow(QMainWindow):
     def _on_nav_changed(self, row: int) -> None:
         if 0 <= row < len(self._nav_to_stack_index):
             self.stack.setCurrentIndex(self._nav_to_stack_index[row])
+            self.page_title.setText(self.nav.item(row).text().split(" ", 1)[1] if " " in self.nav.item(row).text() else self.nav.item(row).text())
 
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
