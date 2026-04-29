@@ -91,7 +91,8 @@ class MainWindow(QMainWindow):
         side = QFrame()
         side.setObjectName("sidebar")
         layout = QVBoxLayout(side)
-        layout.setContentsMargins(30, 14, 22, 14)
+        layout.setContentsMargins(20, 10, 14, 10)
+        layout.setSpacing(8)
 
         title = QLabel("Система управления\nперсоналом")
         title.setObjectName("appTitle")
@@ -100,12 +101,15 @@ class MainWindow(QMainWindow):
         subtitle.setObjectName("appSubtitle")
         layout.addWidget(title)
         layout.addWidget(subtitle)
-        layout.addSpacing(34)
+        layout.addSpacing(12)
 
         self.nav = QListWidget()
         self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.nav.setSpacing(2)
+        self.nav.setVerticalScrollMode(self.nav.ScrollMode.ScrollPerPixel)
+        self.nav.setSizeAdjustPolicy(self.nav.SizeAdjustPolicy.AdjustToContents)
+        self.nav.setFixedHeight(5 * 48 + 20)
         for text in [
             "📊 Dashboard",
             "📚 Библиотека курсов",
@@ -154,7 +158,8 @@ class MainWindow(QMainWindow):
                 outline: none;
             }
             QListWidget::item {
-                padding: 10px 12px;
+                min-height: 38px;
+                padding: 8px 12px;
                 border-radius: 10px;
                 margin: 3px 0;
             }
