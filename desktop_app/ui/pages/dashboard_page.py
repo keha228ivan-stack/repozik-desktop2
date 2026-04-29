@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QProgressBar, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
@@ -7,66 +7,64 @@ class DashboardPage(QWidget):
     def __init__(self, state: AppState) -> None:
         super().__init__()
         self.state = state
-
+        self.cards: dict[str, QLabel] = {}
         root = QVBoxLayout(self)
         root.setContentsMargins(28, 12, 24, 24)
-
         container = QFrame()
-        container.setObjectName("dashboardContainer")
         body = QVBoxLayout(container)
-        body.setContentsMargins(36, 28, 32, 24)
-        body.setSpacing(16)
-
         title = QLabel("Dashboard")
-        title.setObjectName("dashTitle")
-        subtitle = QLabel("Обзор ключевых метрик обучения")
-        subtitle.setObjectName("dashSubtitle")
+        title.setStyleSheet("font-size: 42px; font-weight: 800; color: #0f172a;")
+        subtitle = QLabel("Обзор вашего обучения")
+        subtitle.setStyleSheet("font-size: 20px; color: #64748b; margin-bottom: 8px;")
         body.addWidget(title)
         body.addWidget(subtitle)
+        self.empty = QLabel("")
+        body.addWidget(self.empty)
 
         metrics = QGridLayout()
-        metrics.setHorizontalSpacing(16)
-        metrics.addWidget(self._metric_card("Всего курсов", "0"), 0, 0)
-        metrics.addWidget(self._metric_card("Активные", "0"), 0, 1)
-        metrics.addWidget(self._metric_card("Завершено", "0"), 0, 2)
+        for i, (key, title) in enumerate([
+            ("totalCourses", "Всего курсов"),
+            ("inProgressCourses", "В процессе"),
+            ("completedCourses", "Завершено"),
+            ("averageProgress", "Средний прогресс"),
+        ]):
+            card = QFrame()
+            card.setObjectName("surfaceCard")
+            layout = QVBoxLayout(card)
+            icon = QLabel("📈")
+            layout.addWidget(icon)
+            title_label = QLabel(title)
+            title_label.setObjectName("metricTitle")
+            layout.addWidget(title_label)
+            val = QLabel("0")
+            val.setObjectName("metricValue")
+            layout.addWidget(val)
+            self.cards[key] = val
+            metrics.addWidget(card, 0, i)
         body.addLayout(metrics)
-
-        courses = QFrame()
-        courses.setObjectName("coursesCard")
-        courses_layout = QVBoxLayout(courses)
-        courses_layout.addWidget(QLabel("Мои курсы"))
-        body.addWidget(courses)
-        body.addStretch(1)
-
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        self.progress.setFormat("Средний прогресс: %p%")
+        body.addWidget(self.progress)
+        self.extra = QLabel("")
+        body.addWidget(self.extra)
         root.addWidget(container)
-        self._apply_styles()
-
-    def _metric_card(self, title: str, value: str) -> QWidget:
-        card = QFrame()
-        card.setObjectName("metricCard")
-        layout = QVBoxLayout(card)
-        label = QLabel(title)
-        label.setObjectName("metricLabel")
-        number = QLabel(value)
-        number.setObjectName("metricValue")
-        layout.addWidget(label)
-        layout.addWidget(number)
-        layout.addStretch(1)
-        return card
+        self.state.dashboard_changed.connect(self._set_data)
 
     def refresh(self) -> None:
         self.state.refresh_backend_status()
+        self.state.load_dashboard()
 
-    def _apply_styles(self) -> None:
-        self.setStyleSheet(
-            """
-            QFrame#dashboardContainer { background: #e8ebf1; border-radius: 0; }
-            QLabel#dashTitle { font-size: 22px; font-weight: 700; color: #252a30; }
-            QLabel#dashSubtitle { font-size: 14px; color: #757b85; margin-bottom: 8px; }
-            QFrame#metricCard { background: #f7f7f8; border-radius: 18px; min-height: 150px; }
-            QLabel#metricLabel { font-size: 14px; color: #7b8087; padding: 8px 10px 0 10px; }
-            QLabel#metricValue { font-size: 34px; font-weight: 700; color: #21252b; padding: 0 10px 10px 10px; }
-            QFrame#coursesCard { background: #f7f7f8; border-radius: 18px; min-height: 95px; }
-            QFrame#coursesCard QLabel { font-size: 16px; font-weight: 700; color: #2f343b; padding: 8px 10px; }
-            """
-        )
+    def _set_data(self, data: dict) -> None:
+        total = int(data.get("totalCourses", 0))
+        if total == 0:
+            self.empty.setText("Вам пока не назначены курсы")
+        else:
+            self.empty.setText("")
+        for k, lbl in self.cards.items():
+            v = data.get(k, 0)
+            suffix = "%" if k in {"averageProgress", "averageScore"} else ""
+            lbl.setText(f"{v}{suffix}")
+        self.progress.setValue(int(data.get("averageProgress", 0)))
+        self.extra.setText(f"Ближайший дедлайн: {data.get('nearestDeadline', '—')} | Последние активные: {', '.join(data.get('recentCourses', []))}")
