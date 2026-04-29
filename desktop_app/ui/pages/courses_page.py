@@ -56,6 +56,8 @@ class CoursesPage(QWidget):
         self.state.load_courses(self.search.text().strip(), status)
 
     def _set_courses(self, courses: list) -> None:
+        if self.locked_status:
+            courses = [c for c in courses if c.get("status") == self.locked_status]
         while self.container.count():
             child = self.container.takeAt(0)
             if child.widget():
@@ -76,7 +78,8 @@ class CoursesPage(QWidget):
         title = QLabel(c.get('title')); title.setObjectName("courseTitle")
         desc = QLabel(c.get("description", "")); desc.setObjectName("courseMeta")
         status = c.get("status")
-        badge = QLabel(STATUS_LABELS.get(status, status)); badge.setObjectName("courseBadge")
+        badge_text = "Доступен" if self.locked_status == "NOT_STARTED" else STATUS_LABELS.get(status, status)
+        badge = QLabel(badge_text); badge.setObjectName("courseBadge")
         badge_bg = "#F3F4F6"
         if status == "IN_PROGRESS":
             badge_bg = "#DBEAFE"
@@ -84,6 +87,9 @@ class CoursesPage(QWidget):
             badge_bg = "#DCFCE7"
         elif status == "OVERDUE":
             badge_bg = "#FEE2E2"
+        elif self.locked_status == "NOT_STARTED":
+            badge_bg = "#E0E7FF"
+            color = "#1D4ED8"
         badge.setStyleSheet(f"color:{color}; background:{badge_bg};")
         meta = QLabel(f"Уроков: {c.get('lessonsCount', 0)} • ~{c.get('estimatedMinutes', 0)} мин • Дедлайн: {c.get('deadline', '—')}")
         meta.setObjectName("courseMeta")
