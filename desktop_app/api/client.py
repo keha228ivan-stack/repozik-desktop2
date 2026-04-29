@@ -42,6 +42,15 @@ class ApiClient:
     def _request(self, method: str, path: str, **kwargs: Any) -> Dict[str, Any]:
         url = self._join_url(path)
         kwargs.setdefault("timeout", self.timeout_seconds)
+        payload = kwargs.get("json")
+        if isinstance(payload, dict):
+            safe_payload = {
+                k: ("***" if "password" in k.lower() else v)
+                for k, v in payload.items()
+            }
+            logger.info("API request %s %s payload=%s", method, url, safe_payload)
+        else:
+            logger.info("API request %s %s", method, url)
 
         try:
             response = self.session.request(method, url, **kwargs)
@@ -137,40 +146,23 @@ class ApiClient:
         return self._request("POST", "/auth/login", json={"email": email, "password": password})
 
     def register(self, full_name: str, email: str, password: str) -> Dict[str, Any]:
-        payload_variants = [
-            {"fullName": full_name, "email": email, "password": password, "role": "EMPLOYEE"},
-            {"full_name": full_name, "email": email, "password": password, "role": "EMPLOYEE"},
-            {"name": full_name, "email": email, "password": password, "role": "EMPLOYEE"},
-            {"fullName": full_name, "email": email, "password": password, "role": "employee"},
-            {"fullName": full_name, "email": email, "password": password},
-        ]
-        paths = [
-            "/auth/register",
-            "/auth/signup",
-            "/register",
-            "/users/register",
-            "/employees/register",
-            "/auth/employee/register",
-        ]
-
-        last_error: ApiError | None = None
-        for path in paths:
-            for payload in payload_variants:
-                try:
-                    return self._request("POST", path, json=payload)
-                except ApiError as exc:
-                    last_error = exc
-                    if exc.status_code in (400, 422):
-                        continue
-                    if exc.status_code in (404, 405):
-                        break
-                    if exc.status_code == 409:
-                        raise ApiError("Пользователь с таким email уже существует", status_code=409) from exc
-                    if exc.status_code is not None and exc.status_code >= 500:
-                        continue
-                    raise
-
-        raise last_error or ApiError("Ошибка регистрации. Попробуйте позже.")
+        payload = {
+            "fullName": full_name,
+            "email": email,
+            "password": password,
+            "position": "Сотрудник",
+            "departmentId": None,
+        }
+        try:
+            return self._request("POST", "/auth/register", json=payload)
+        except ApiError as exc:
+            if exc.status_code == 409:
+                raise ApiError("Пользователь с таким email уже существует", status_code=409) from exc
+            if exc.status_code in (400, 422):
+                raise ApiError("Заполните обязательные поля", status_code=400) from exc
+            if exc.status_code == 500:
+                raise ApiError("Ошибка регистрации. Попробуйте позже", status_code=500) from exc
+            raise
 
     def me(self) -> Dict[str, Any]:
         return self._request("GET", "/auth/me")
