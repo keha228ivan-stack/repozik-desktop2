@@ -120,6 +120,19 @@ class MainWindow(QMainWindow):
         if 0 <= row < len(self._nav_to_stack_index):
             self._set_active_nav(row)
             self.stack.setCurrentIndex(self._nav_to_stack_index[row])
+            self.page_title.setText(self.nav.item(row).text().split(" ", 1)[1] if " " in self.nav.item(row).text() else self.nav.item(row).text())
+
+    def _set_active_nav(self, active_row: int) -> None:
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == active_row)
+
+    def _set_active_nav(self, active_row: int) -> None:
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == active_row)
+
+    def _set_active_nav(self, active_row: int) -> None:
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == active_row)
 
     def _set_active_nav(self, active_row: int) -> None:
         for i, btn in enumerate(self.nav_buttons):
