@@ -112,7 +112,6 @@ class MainWindow(QMainWindow):
         self.nav.setSpacing(2)
         self.nav.setVerticalScrollMode(self.nav.ScrollMode.ScrollPerItem)
         self.nav.setSizeAdjustPolicy(self.nav.SizeAdjustPolicy.AdjustToContents)
-        self.nav.setFixedHeight(5 * 48 + 10)
         for text in [
             "📊 Dashboard",
             "📚 Библиотека курсов",
@@ -121,6 +120,10 @@ class MainWindow(QMainWindow):
             "👤 Профиль",
         ]:
             self.nav.addItem(QListWidgetItem(text))
+        if self.nav.count() > 0:
+            row_h = max(self.nav.sizeHintForRow(0), 44)
+            total_h = row_h * self.nav.count() + (self.nav.frameWidth() * 2) + 8
+            self.nav.setFixedHeight(total_h)
         layout.addWidget(self.nav)
         layout.addStretch(1)
         return side
