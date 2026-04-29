@@ -1,10 +1,11 @@
-import logging
+from __future__ import annotations
+
+from datetime import datetime
 from typing import Any, Callable, Dict, List
 
 from desktop_app.api.client import ApiClient
 from desktop_app.api.errors import ApiError
-
-logger = logging.getLogger(__name__)
+from desktop_app.services.local_auth_service import LocalAuthService
 
 
 class _SimpleSignal:
@@ -20,12 +21,12 @@ class _SimpleSignal:
 
 
 try:
-    from PySide6.QtCore import QObject, Signal  # type: ignore
+    from PySide6.QtCore import QObject, Signal
 except Exception:
-    class QObject:  # type: ignore
+    class QObject:
         pass
 
-    def Signal(*_args: Any, **_kwargs: Any) -> _SimpleSignal:  # type: ignore
+    def Signal(*_args: Any, **_kwargs: Any) -> _SimpleSignal:
         return _SimpleSignal()
 
 
@@ -36,248 +37,165 @@ class AppState(QObject):
 
     profile_changed = Signal(dict)
     profile_error = Signal(str)
-
     courses_changed = Signal(list)
     courses_error = Signal(str)
-
+    dashboard_changed = Signal(dict)
     notifications_changed = Signal(list)
     notifications_error = Signal(str)
-
     forum_changed = Signal(list)
     forum_error = Signal(str)
 
     def __init__(self, api: ApiClient) -> None:
         super().__init__()
         self.api = api
+        self.local_auth = LocalAuthService()
         self.user: Dict[str, Any] | None = None
         self.is_authenticated = False
         self.offline_mode = False
-        self._last_error_text: str | None = None
-
-        self._demo_user = {
-            "id": "demo-user-1",
-            "fullName": "Demo Employee",
-            "email": "demo@company.local",
-            "role": "Сотрудник",
-        }
-        self._demo_password = "Demo12345!"
-        self._bootstrap_session()
-
-    def _emit_error(self, text: str) -> None:
-        if text != self._last_error_text:
-            self.error.emit(text)
-            self._last_error_text = text
-
-    def _set_backend_status(self, available: bool) -> None:
-        message = "Backend доступен" if available else "Backend недоступен: работа в ограниченном режиме"
-        self.backend_status_changed.emit(available, message)
+        self.courses: list[dict[str, Any]] = []
+        current_user = self.local_auth.get_current_user()
+        if current_user:
+            self.user = current_user
+            self.is_authenticated = True
 
     def refresh_backend_status(self) -> bool:
         available = self.api.health_check()
-        self._set_backend_status(available)
+        self.backend_status_changed.emit(available, "Backend доступен" if available else "Backend недоступен")
+        self.offline_mode = not available
         return available
 
-    def _bootstrap_session(self) -> None:
-        if not self.api.is_backend_available():
-            self._enable_offline_mode()
-            return
-
-        self.offline_mode = False
-        self._set_backend_status(True)
-        try:
-            me = self.api.me()
-            self.user = me
-            self.is_authenticated = True
-        except ApiError:
-            self.user = None
-            self.is_authenticated = False
-    
-    def _enable_offline_mode(self) -> None:
-        self.offline_mode = True
-        self.user = dict(self._demo_user)
-        self.is_authenticated = True
-        self._set_backend_status(False)
-
     def login(self, email: str, password: str) -> bool:
-        if self.offline_mode and email.lower() == self._demo_user["email"] and password == self._demo_password:
-            self.user = dict(self._demo_user)
-            self.is_authenticated = True
-            self.auth_changed.emit(True)
-            return True
         try:
-            payload = self.api.login(email, password)
+            payload = self.local_auth.login(email, password)
             token = payload.get("token")
             if token:
                 self.api.set_token(token)
-            self.user = payload.get("user") or self.api.me()
+            self.user = payload.get("user")
             self.is_authenticated = True
             self.auth_changed.emit(True)
-            self._set_backend_status(True)
             return True
         except ApiError as exc:
-            if self._try_offline_demo_login(email=email, password=password, error=exc):
-                return True
-            self._set_backend_status(False)
-            self._emit_error(str(exc))
+            self.error.emit(str(exc))
             return False
-
-    def _try_offline_demo_login(self, email: str, password: str, error: ApiError) -> bool:
-        if "Не удалось подключиться к серверу" not in str(error) and "Сервер временно недоступен" not in str(error):
-            return False
-        if email.lower() != self._demo_user["email"] or password != self._demo_password:
-            return False
-        self._enable_offline_mode()
-        self.auth_changed.emit(True)
-        return True
-
-    def _try_offline_demo_login(self, email: str, password: str, error: ApiError) -> bool:
-        if "Не удалось подключиться к серверу" not in str(error) and "Сервер временно недоступен" not in str(error):
-            return False
-        if email.lower() != self._demo_user["email"] or password != self._demo_password:
-            return False
-        self.user = dict(self._demo_user)
-        self.is_authenticated = True
-        self.auth_changed.emit(True)
-        self._set_backend_status(False)
-        return True
 
     def register(self, full_name: str, email: str, password: str) -> bool:
-        if self.offline_mode:
-            self._emit_error("Сервер недоступен. Регистрация временно отключена в офлайн-режиме.")
-            return False
         try:
-            payload = self.api.register(full_name=full_name, email=email, password=password)
+            payload = self.local_auth.register(full_name=full_name, email=email, password=password)
             token = payload.get("token")
             if token:
                 self.api.set_token(token)
-            self.user = payload.get("user") or {"fullName": full_name, "email": email, "role": "Сотрудник"}
+            self.user = payload.get("user")
             self.is_authenticated = True
             self.auth_changed.emit(True)
-            self._set_backend_status(True)
             return True
         except ApiError as exc:
-            self._set_backend_status(False)
-            self._emit_error(str(exc))
+            self.error.emit(str(exc))
             return False
 
     def logout(self) -> None:
+        self.local_auth.logout()
         self.api.set_token(None)
         self.user = None
         self.is_authenticated = False
         self.auth_changed.emit(False)
 
-    def load_profile(self) -> None:
-        if self.offline_mode:
-            self.profile_changed.emit(
-                {"fullName": self._demo_user["fullName"], "phone": "+7 (900) 000-00-00"}
-            )
-            self.profile_error.emit("")
-            return
-        try:
-            profile = self.api.get_profile()
-            self.profile_changed.emit(profile)
-            self.profile_error.emit("")
-            self._set_backend_status(True)
-        except ApiError as exc:
-            logger.info("Profile load failed: %s", exc)
-            self.profile_changed.emit({})
-            self.profile_error.emit("Не удалось загрузить профиль.")
-            self._set_backend_status(False)
+    def load_dashboard(self) -> None:
+        data = self._dashboard_fallback()
+        if not self.offline_mode:
+            try:
+                data = self.api.get_dashboard()
+            except ApiError:
+                pass
+        self.dashboard_changed.emit(data)
 
-    def save_profile(self, payload: Dict[str, Any]) -> None:
-        if self.offline_mode:
-            self.profile_changed.emit(payload)
-            self.profile_error.emit("Изменения сохранены локально (офлайн-режим).")
-            return
+    def load_courses(self, q: str = "", status: str = "ALL") -> None:
         try:
-            profile = self.api.update_profile(payload)
-            self.profile_changed.emit(profile)
-            self.profile_error.emit("")
-            self._set_backend_status(True)
-        except ApiError as exc:
-            logger.info("Profile save failed: %s", exc)
-            self.profile_error.emit("Не удалось сохранить профиль.")
-            self._emit_error(str(exc))
-            self._set_backend_status(False)
-
-    def load_courses(self, q: str = "") -> None:
-        if self.offline_mode:
-            mock_courses = [
-                {"title": "Введение в HR-процессы"},
-                {"title": "Оценка эффективности сотрудников"},
-                {"title": "Коммуникация в команде"},
-            ]
-            filtered = [c for c in mock_courses if q.lower() in c["title"].lower()] if q else mock_courses
-            self.courses_changed.emit(filtered)
-            self.courses_error.emit("")
-            return
-        try:
-            data = self.api.get_courses(q)
-            courses: List[dict] = data.get("items") or data.get("courses") or []
+            data = self.api.get_employee_courses() if not self.offline_mode else {"courses": self._mock_courses()}
+            courses = data.get("courses") or data.get("items") or []
+            if q:
+                courses = [c for c in courses if q.lower() in c.get("title", "").lower()]
+            if status != "ALL":
+                courses = [c for c in courses if c.get("status") == status]
+            self.courses = courses
             self.courses_changed.emit(courses)
             self.courses_error.emit("")
-            self._set_backend_status(True)
         except ApiError as exc:
-            logger.info("Courses load failed: %s", exc)
             self.courses_changed.emit([])
-            self.courses_error.emit("Не удалось загрузить курсы.")
-            self._set_backend_status(False)
+            self.courses_error.emit(str(exc))
+
+    def load_profile(self) -> None:
+        try:
+            profile = self.api.get_profile() if not self.offline_mode else self._mock_profile()
+            self.profile_changed.emit(profile)
+            self.profile_error.emit("")
+        except ApiError as exc:
+            self.profile_changed.emit({})
+            self.profile_error.emit(str(exc))
+
+    def save_profile(self, payload: Dict[str, Any]) -> None:
+        try:
+            profile = self.api.update_profile(payload) if not self.offline_mode else payload
+            self.profile_changed.emit(profile)
+            self.profile_error.emit("Сохранено")
+        except ApiError as exc:
+            self.profile_error.emit(str(exc))
+
+    def start_course(self, course_id: str) -> None:
+        if not self.offline_mode:
+            self.api.start_course(course_id)
+
+    def complete_lesson(self, course_id: str, lesson_id: str) -> None:
+        if not self.offline_mode:
+            self.api.complete_lesson(course_id, lesson_id)
+
+    def submit_test(self, course_id: str, answers: list[dict[str, Any]]) -> dict[str, Any]:
+        if self.offline_mode:
+            return {"score": 7, "maxScore": 10, "percent": 70, "passed": True, "attempts": 1, "completedAt": datetime.utcnow().isoformat()}
+        return self.api.submit_test(course_id, answers)
+
 
     def load_notifications(self) -> None:
-        if self.offline_mode:
-            self.notifications_changed.emit(
-                [
-                    {"title": "Добро пожаловать в демо-режим", "read": False},
-                    {"title": "Backend недоступен: данные могут быть неполными", "read": True},
-                ]
-            )
-            self.notifications_error.emit("")
-            return
-        try:
-            data = self.api.get_notifications()
-            items = data.get("items") or data.get("notifications") or []
-            self.notifications_changed.emit(items)
-            self.notifications_error.emit("")
-            self._set_backend_status(True)
-        except ApiError as exc:
-            logger.info("Notifications load failed: %s", exc)
-            self.notifications_changed.emit([])
-            self.notifications_error.emit("Не удалось загрузить уведомления.")
-            self._set_backend_status(False)
+        self.notifications_changed.emit([])
+        self.notifications_error.emit("")
 
     def load_topics(self) -> None:
-        if self.offline_mode:
-            self.forum_changed.emit(
-                [
-                    {"title": "FAQ по демо-режиму"},
-                    {"title": "Как подключить реальный backend"},
-                ]
-            )
-            self.forum_error.emit("")
-            return
-        try:
-            data = self.api.get_topics()
-            items = data.get("items") or data.get("topics") or []
-            self.forum_changed.emit(items)
-            self.forum_error.emit("")
-            self._set_backend_status(True)
-        except ApiError as exc:
-            logger.info("Forum load failed: %s", exc)
-            self.forum_changed.emit([])
-            self.forum_error.emit("Не удалось загрузить темы форума.")
-            self._set_backend_status(False)
+        self.forum_changed.emit([])
+        self.forum_error.emit("")
 
     def create_topic(self, title: str, body: str) -> bool:
-        if self.offline_mode:
-            self.forum_error.emit("В офлайн-режиме создание тем отключено.")
-            return False
-        try:
-            self.api.create_topic(title, body)
-            self._set_backend_status(True)
-            return True
-        except ApiError as exc:
-            logger.info("Forum create failed: %s", exc)
-            self.forum_error.emit("Не удалось создать тему.")
-            self._emit_error(str(exc))
-            self._set_backend_status(False)
-            return False
+        return False
+
+    def _dashboard_fallback(self) -> dict[str, Any]:
+        return {
+            "totalCourses": 4,
+            "inProgressCourses": 2,
+            "completedCourses": 1,
+            "averageProgress": 48,
+            "averageScore": 76,
+            "overdueCourses": 1,
+            "nearestDeadline": "2026-05-03",
+            "recentCourses": ["Командная работа", "Охрана труда"],
+        }
+
+    def _mock_courses(self) -> list[dict[str, Any]]:
+        return [
+            {"id": "1", "title": "Охрана труда", "description": "Базовые правила", "status": "IN_PROGRESS", "progress": 35, "lessonsCount": 6, "estimatedMinutes": 120, "deadline": "2026-05-03", "lastLesson": "Модуль 2"},
+            {"id": "2", "title": "Командная работа", "description": "Коммуникации", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 5, "estimatedMinutes": 95, "deadline": "2026-05-12"},
+            {"id": "3", "title": "Антифрод", "description": "Проверка рисков", "status": "COMPLETED", "progress": 100, "lessonsCount": 7, "estimatedMinutes": 140, "deadline": "2026-04-20", "testResult": "86%"},
+            {"id": "4", "title": "Этика и комплаенс", "description": "Нормы поведения", "status": "OVERDUE", "progress": 50, "lessonsCount": 8, "estimatedMinutes": 170, "deadline": "2026-04-10", "lastLesson": "Модуль 4"},
+        ]
+
+    def _mock_profile(self) -> dict[str, Any]:
+        return {
+            "fullName": "Иван Петров",
+            "email": "i.petrov@company.local",
+            "position": "HR Specialist",
+            "department": "People Operations",
+            "registeredAt": "2025-09-01",
+            "role": "Сотрудник",
+            "overallProgress": 62,
+            "assignedCourses": 12,
+            "completedCourses": 7,
+            "averageScore": 81,
+            "history": self._mock_courses(),
+        }
