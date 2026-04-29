@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List
 
 from desktop_app.api.client import ApiClient
 from desktop_app.api.errors import ApiError
+from desktop_app.services.local_auth_service import LocalAuthService
 
 
 class _SimpleSignal:
@@ -47,10 +48,15 @@ class AppState(QObject):
     def __init__(self, api: ApiClient) -> None:
         super().__init__()
         self.api = api
+        self.local_auth = LocalAuthService()
         self.user: Dict[str, Any] | None = None
         self.is_authenticated = False
         self.offline_mode = False
         self.courses: list[dict[str, Any]] = []
+        current_user = self.local_auth.get_current_user()
+        if current_user:
+            self.user = current_user
+            self.is_authenticated = True
 
     def refresh_backend_status(self) -> bool:
         available = self.api.health_check()
@@ -60,11 +66,11 @@ class AppState(QObject):
 
     def login(self, email: str, password: str) -> bool:
         try:
-            payload = self.api.login(email, password)
+            payload = self.local_auth.login(email, password)
             token = payload.get("token")
             if token:
                 self.api.set_token(token)
-            self.user = payload.get("user") or self.api.me()
+            self.user = payload.get("user")
             self.is_authenticated = True
             self.auth_changed.emit(True)
             return True
@@ -74,11 +80,11 @@ class AppState(QObject):
 
     def register(self, full_name: str, email: str, password: str) -> bool:
         try:
-            payload = self.api.register(full_name=full_name, email=email, password=password)
+            payload = self.local_auth.register(full_name=full_name, email=email, password=password)
             token = payload.get("token")
             if token:
                 self.api.set_token(token)
-            self.user = payload.get("user") or {"fullName": full_name, "email": email, "role": "EMPLOYEE"}
+            self.user = payload.get("user")
             self.is_authenticated = True
             self.auth_changed.emit(True)
             return True
@@ -87,6 +93,7 @@ class AppState(QObject):
             return False
 
     def logout(self) -> None:
+        self.local_auth.logout()
         self.api.set_token(None)
         self.user = None
         self.is_authenticated = False
