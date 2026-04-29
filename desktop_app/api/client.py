@@ -124,8 +124,7 @@ class ApiClient:
             self._request("GET", self.config.health_path, timeout=min(3.0, self.timeout_seconds))
             self._health_cache = True
             return True
-        except ApiError as exc:
-            logger.info("Health check failed: %s | technical=%s", exc.user_message, exc.technical_message)
+        except ApiError:
             self._health_cache = False
             return False
 
@@ -138,45 +137,37 @@ class ApiClient:
         return self._request("POST", "/auth/login", json={"email": email, "password": password})
 
     def register(self, full_name: str, email: str, password: str) -> Dict[str, Any]:
-        payload_variants = [
-            {"fullName": full_name, "email": email, "password": password, "role": "employee"},
-            {"full_name": full_name, "email": email, "password": password, "role": "employee"},
-            {"name": full_name, "email": email, "password": password, "role": "employee"},
-            {"fullName": full_name, "email": email, "password": password},
-        ]
-        register_paths = [
-            "/auth/register",
-            "/auth/signup",
-            "/register",
-            "/users/register",
-            "/employees/register",
-            "/auth/employee/register",
-        ]
-
-        last_error: ApiError | None = None
-        for path in register_paths:
-            for payload in payload_variants:
-                try:
-                    return self._request("POST", path, json=payload)
-                except ApiError as exc:
-                    last_error = exc
-                    if exc.status_code in (400, 422):
-                        continue
-                    if exc.status_code in (404, 405):
-                        break
-                    if exc.status_code is not None and exc.status_code >= 500:
-                        continue
-                    if exc.status_code is None:
-                        raise exc
-                    raise exc
-
-        raise last_error or ApiError("Не удалось зарегистрировать аккаунт.")
+        return self._request("POST", "/auth/register", json={"fullName": full_name, "email": email, "password": password, "role": "employee"})
 
     def me(self) -> Dict[str, Any]:
         return self._request("GET", "/auth/me")
 
+    def get_dashboard(self) -> Dict[str, Any]:
+        return self._request("GET", "/api/employee/dashboard")
+
+    def get_employee_courses(self) -> Dict[str, Any]:
+        return self._request("GET", "/api/employee/courses")
+
+    def get_in_progress_courses(self) -> Dict[str, Any]:
+        return self._request("GET", "/api/employee/courses/in-progress")
+
+    def get_completed_courses(self) -> Dict[str, Any]:
+        return self._request("GET", "/api/employee/courses/completed")
+
+    def get_course_details(self, course_id: str) -> Dict[str, Any]:
+        return self._request("GET", f"/api/employee/courses/{course_id}")
+
+    def start_course(self, course_id: str) -> Dict[str, Any]:
+        return self._request("POST", f"/api/employee/courses/{course_id}/start")
+
+    def complete_lesson(self, course_id: str, lesson_id: str) -> Dict[str, Any]:
+        return self._request("POST", f"/api/employee/courses/{course_id}/lessons/{lesson_id}/complete")
+
+    def submit_test(self, course_id: str, answers: list[dict[str, Any]]) -> Dict[str, Any]:
+        return self._request("POST", f"/api/employee/courses/{course_id}/test/submit", json={"answers": answers})
+
     def get_profile(self) -> Dict[str, Any]:
-        return self._request("GET", "/profile")
+        return self._request("GET", "/api/employee/profile")
 
     def update_profile(self, payload: Dict[str, Any]) -> Dict[str, Any]:
         return self._request("PATCH", "/profile", json=payload)
@@ -184,18 +175,3 @@ class ApiClient:
     def get_courses(self, q: str = "") -> Dict[str, Any]:
         params = {"q": q} if q else None
         return self._request("GET", "/courses", params=params)
-
-    def get_progress(self) -> Dict[str, Any]:
-        return self._request("GET", "/progress")
-
-    def get_notifications(self) -> Dict[str, Any]:
-        return self._request("GET", "/notifications")
-
-    def mark_notification_read(self, notif_id: str) -> Dict[str, Any]:
-        return self._request("PATCH", f"/notifications/{notif_id}/read")
-
-    def get_topics(self) -> Dict[str, Any]:
-        return self._request("GET", "/forum/topics")
-
-    def create_topic(self, title: str, body: str) -> Dict[str, Any]:
-        return self._request("POST", "/forum/topics", json={"title": title, "body": body})
