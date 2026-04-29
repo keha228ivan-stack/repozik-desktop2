@@ -1,100 +1,99 @@
-from PySide6.QtWidgets import (
-    QHBoxLayout,
-    QLabel,
-    QLineEdit,
-    QListWidget,
-    QPushButton,
-    QVBoxLayout,
-    QWidget,
-)
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QProgressBar, QScrollArea, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
 
+STATUS_COLORS = {"NOT_STARTED": "#6b7280", "IN_PROGRESS": "#2563eb", "COMPLETED": "#16a34a", "OVERDUE": "#dc2626", "LOW_SCORE": "#f59e0b"}
+STATUS_LABELS = {"NOT_STARTED": "Не начат", "IN_PROGRESS": "В процессе", "COMPLETED": "Завершён", "OVERDUE": "Просрочен", "LOW_SCORE": "Низкий балл"}
+
+
 class CoursesPage(QWidget):
-    def __init__(self, state: AppState) -> None:
+    def __init__(self, state: AppState, title_text: str = "Библиотека курсов", locked_status: str | None = None) -> None:
         super().__init__()
         self.state = state
-        self.title = QLabel("Курсы")
-        self.title.setObjectName("coursesTitle")
+        self.locked_status = locked_status
         self.search = QLineEdit()
         self.search.setPlaceholderText("Поиск курсов")
-        self.search.setObjectName("coursesSearch")
-        self.list = QListWidget()
-        self.list.setObjectName("coursesList")
-        self.status = QLabel("")
-        self.status.setObjectName("coursesStatus")
-
+        self.filter = QComboBox()
+        self.filter.addItems(["ALL", "NOT_STARTED", "IN_PROGRESS", "COMPLETED", "OVERDUE"])
+        if locked_status:
+            self.filter.setCurrentText(locked_status)
+            self.filter.setEnabled(False)
         btn = QPushButton("Поиск")
-        btn.setObjectName("searchButton")
+        btn.setObjectName("primaryButton")
         btn.clicked.connect(self.refresh)
-
         top = QHBoxLayout()
         top.addWidget(self.search)
+        top.addWidget(self.filter)
         top.addWidget(btn)
-
-        layout = QVBoxLayout()
-        layout.setContentsMargins(24, 18, 24, 20)
-        layout.setSpacing(12)
-        layout.addWidget(self.title)
-        layout.addLayout(top)
-        layout.addWidget(self.status)
-        layout.addWidget(self.list)
-        self.setLayout(layout)
-        self._apply_styles()
-
+        self.status = QLabel("")
+        self.container = QVBoxLayout()
+        wrap = QWidget(); wrap.setLayout(self.container)
+        sc = QScrollArea(); sc.setWidgetResizable(True); sc.setWidget(wrap); sc.setFrameShape(QFrame.Shape.NoFrame)
+        root = QVBoxLayout(self)
+        root.setContentsMargins(32, 28, 32, 28)
+        root.setSpacing(16)
+        header = QLabel(title_text)
+        header.setStyleSheet("font-size: 44px; font-weight: 800; color: #0f172a;")
+        root.addWidget(header)
+        root.addLayout(top); root.addWidget(self.status); root.addWidget(sc)
+        self.setStyleSheet("""
+            QFrame#surfaceCard { background: white; border: 1px solid #E2E8F0; border-radius: 16px; padding: 14px; }
+            QFrame#surfaceCard:hover { border: 1px solid #c7d2fe; }
+            QLabel#courseTitle { font-size: 30px; font-weight: 800; color: #0f172a; }
+            QLabel#courseMeta { color: #6B7280; }
+            QLabel#courseBadge { font-weight: 700; padding: 5px 12px; border-radius: 10px; background: #F3F4F6; }
+            QProgressBar { border: 0; background: #E5E7EB; border-radius: 4px; height: 8px; }
+            QProgressBar::chunk { background: #2563EB; border-radius: 4px; }
+        """)
         self.state.courses_changed.connect(self._set_courses)
-        self.state.courses_error.connect(self._set_error)
+        self.state.courses_error.connect(self.status.setText)
 
     def refresh(self) -> None:
         self.status.setText("Загрузка курсов...")
-        self.state.load_courses(self.search.text().strip())
+        status = self.locked_status or self.filter.currentText()
+        self.state.load_courses(self.search.text().strip(), status)
 
     def _set_courses(self, courses: list) -> None:
-        self.list.clear()
-        for item in courses:
-            self.list.addItem(item.get("title", "Untitled"))
-
+        while self.container.count():
+            child = self.container.takeAt(0)
+            if child.widget():
+                child.widget().deleteLater()
         if not courses:
-            self.status.setText("Курсы не найдены.")
-        else:
-            self.status.setText("")
+            self.status.setText("Вам пока не назначены курсы")
+            return
+        self.status.setText("")
+        for c in courses:
+            self.container.addWidget(self._card(c))
+        self.container.addStretch(1)
 
-    def _set_error(self, text: str) -> None:
-        if text:
-            self.status.setText(text)
-
-    def _apply_styles(self) -> None:
-        self.setStyleSheet(
-            """
-            QLabel#coursesTitle { font-size: 30px; font-weight: 700; color: #1f2937; }
-            QLineEdit#coursesSearch {
-                background: #ffffff;
-                border: 1px solid #d1d5db;
-                border-radius: 10px;
-                padding: 10px 12px;
-                font-size: 15px;
-            }
-            QPushButton#searchButton {
-                background: #2563eb;
-                color: #ffffff;
-                border: none;
-                border-radius: 10px;
-                padding: 10px 16px;
-                font-weight: 600;
-                min-width: 110px;
-            }
-            QPushButton#searchButton:hover { background: #1d4ed8; }
-            QLabel#coursesStatus { color: #b45309; font-size: 14px; }
-            QListWidget#coursesList {
-                background: #f8fafc;
-                border: 1px solid #e5e7eb;
-                border-radius: 14px;
-                font-size: 18px;
-                color: #334155;
-                padding: 6px;
-            }
-            QListWidget#coursesList::item { padding: 12px; border-radius: 10px; margin: 4px 0; }
-            QListWidget#coursesList::item:hover { background: #eff6ff; }
-            """
-        )
+    def _card(self, c: dict) -> QWidget:
+        frame = QFrame()
+        frame.setObjectName("surfaceCard")
+        l = QVBoxLayout(frame)
+        color = STATUS_COLORS.get(c.get("status"), "#6b7280")
+        title = QLabel(c.get('title')); title.setObjectName("courseTitle")
+        desc = QLabel(c.get("description", "")); desc.setObjectName("courseMeta")
+        status = c.get("status")
+        badge = QLabel(STATUS_LABELS.get(status, status)); badge.setObjectName("courseBadge")
+        badge_bg = "#F3F4F6"
+        if status == "IN_PROGRESS":
+            badge_bg = "#DBEAFE"
+        elif status == "COMPLETED":
+            badge_bg = "#DCFCE7"
+        elif status == "OVERDUE":
+            badge_bg = "#FEE2E2"
+        badge.setStyleSheet(f"color:{color}; background:{badge_bg};")
+        meta = QLabel(f"Уроков: {c.get('lessonsCount', 0)} • ~{c.get('estimatedMinutes', 0)} мин • Дедлайн: {c.get('deadline', '—')}")
+        meta.setObjectName("courseMeta")
+        progress = QProgressBar(); progress.setRange(0,100); progress.setValue(int(c.get("progress",0)))
+        percent = QLabel(f"{int(c.get('progress',0))}%")
+        percent.setObjectName("courseMeta")
+        l.addWidget(title); l.addWidget(desc); l.addWidget(badge); l.addWidget(percent); l.addWidget(progress); l.addWidget(meta)
+        action = QPushButton("Начать" if c.get("status") == "NOT_STARTED" else "Продолжить" if c.get("status") in {"IN_PROGRESS", "OVERDUE", "LOW_SCORE"} else "Посмотреть результат")
+        action.setObjectName("primaryButton" if c.get("status") != "COMPLETED" else "secondaryButton")
+        if c.get("status") == "NOT_STARTED":
+            action.clicked.connect(lambda _=False, cid=c.get("id"): self.state.start_course(str(cid)))
+        l.addWidget(action, alignment=Qt.AlignmentFlag.AlignLeft)
+        return frame
