@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QProgressBar, QScrollArea, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
@@ -27,6 +27,14 @@ class CoursesPage(QWidget):
         sc = QScrollArea(); sc.setWidgetResizable(True); sc.setWidget(wrap)
         root = QVBoxLayout(self)
         root.addLayout(top); root.addWidget(self.status); root.addWidget(sc)
+        self.setStyleSheet("""
+            QFrame#surfaceCard { background: white; border: 1px solid #E5E7EB; border-radius: 12px; }
+            QLabel#courseTitle { font-size: 16px; font-weight: 700; }
+            QLabel#courseMeta { color: #6B7280; }
+            QLabel#courseBadge { font-weight: 600; padding: 2px 8px; border-radius: 8px; background: #F3F4F6; }
+            QProgressBar { border: 0; background: #E5E7EB; border-radius: 4px; height: 8px; }
+            QProgressBar::chunk { background: #2563EB; border-radius: 4px; }
+        """)
         self.state.courses_changed.connect(self._set_courses)
         self.state.courses_error.connect(self.status.setText)
 
@@ -49,11 +57,17 @@ class CoursesPage(QWidget):
 
     def _card(self, c: dict) -> QWidget:
         frame = QFrame()
+        frame.setObjectName("surfaceCard")
         l = QVBoxLayout(frame)
         color = STATUS_COLORS.get(c.get("status"), "#6b7280")
-        l.addWidget(QLabel(f"<b>{c.get('title')}</b>"))
-        l.addWidget(QLabel(c.get("description", "")))
-        l.addWidget(QLabel(f"Статус: <span style='color:{color}'>{c.get('status')}</span> | Прогресс: {c.get('progress', 0)}% | Уроков: {c.get('lessonsCount', 0)} | Время: ~{c.get('estimatedMinutes', 0)} мин | Дедлайн: {c.get('deadline', '—')}"))
+        title = QLabel(c.get('title')); title.setObjectName("courseTitle")
+        desc = QLabel(c.get("description", "")); desc.setObjectName("courseMeta")
+        badge = QLabel(c.get("status")); badge.setObjectName("courseBadge")
+        badge.setStyleSheet(f"color:{color};")
+        meta = QLabel(f"Уроков: {c.get('lessonsCount', 0)} • ~{c.get('estimatedMinutes', 0)} мин • Дедлайн: {c.get('deadline', '—')}")
+        meta.setObjectName("courseMeta")
+        progress = QProgressBar(); progress.setRange(0,100); progress.setValue(int(c.get("progress",0)))
+        l.addWidget(title); l.addWidget(desc); l.addWidget(badge); l.addWidget(progress); l.addWidget(meta)
         action = QPushButton("Начать" if c.get("status") == "NOT_STARTED" else "Продолжить" if c.get("status") in {"IN_PROGRESS", "OVERDUE", "LOW_SCORE"} else "Посмотреть результат")
         if c.get("status") == "NOT_STARTED":
             action.clicked.connect(lambda _=False, cid=c.get("id"): self.state.start_course(str(cid)))

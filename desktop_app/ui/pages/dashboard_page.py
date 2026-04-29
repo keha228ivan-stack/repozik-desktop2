@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QFrame, QGridLayout, QLabel, QProgressBar, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
@@ -26,13 +26,24 @@ class DashboardPage(QWidget):
             ("overdueCourses", "Просрочено"),
         ]):
             card = QFrame()
+            card.setObjectName("surfaceCard")
             layout = QVBoxLayout(card)
-            layout.addWidget(QLabel(title))
+            icon = QLabel("📈")
+            layout.addWidget(icon)
+            title_label = QLabel(title)
+            title_label.setObjectName("metricTitle")
+            layout.addWidget(title_label)
             val = QLabel("0")
+            val.setObjectName("metricValue")
             layout.addWidget(val)
             self.cards[key] = val
             metrics.addWidget(card, i // 3, i % 3)
         body.addLayout(metrics)
+        self.progress = QProgressBar()
+        self.progress.setRange(0, 100)
+        self.progress.setValue(0)
+        self.progress.setFormat("Средний прогресс: %p%")
+        body.addWidget(self.progress)
         self.extra = QLabel("")
         body.addWidget(self.extra)
         root.addWidget(container)
@@ -52,4 +63,5 @@ class DashboardPage(QWidget):
             v = data.get(k, 0)
             suffix = "%" if k in {"averageProgress", "averageScore"} else ""
             lbl.setText(f"{v}{suffix}")
+        self.progress.setValue(int(data.get("averageProgress", 0)))
         self.extra.setText(f"Ближайший дедлайн: {data.get('nearestDeadline', '—')} | Последние активные: {', '.join(data.get('recentCourses', []))}")
