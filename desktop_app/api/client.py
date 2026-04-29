@@ -137,7 +137,40 @@ class ApiClient:
         return self._request("POST", "/auth/login", json={"email": email, "password": password})
 
     def register(self, full_name: str, email: str, password: str) -> Dict[str, Any]:
-        return self._request("POST", "/auth/register", json={"fullName": full_name, "email": email, "password": password, "role": "employee"})
+        payload_variants = [
+            {"fullName": full_name, "email": email, "password": password, "role": "EMPLOYEE"},
+            {"full_name": full_name, "email": email, "password": password, "role": "EMPLOYEE"},
+            {"name": full_name, "email": email, "password": password, "role": "EMPLOYEE"},
+            {"fullName": full_name, "email": email, "password": password, "role": "employee"},
+            {"fullName": full_name, "email": email, "password": password},
+        ]
+        paths = [
+            "/auth/register",
+            "/auth/signup",
+            "/register",
+            "/users/register",
+            "/employees/register",
+            "/auth/employee/register",
+        ]
+
+        last_error: ApiError | None = None
+        for path in paths:
+            for payload in payload_variants:
+                try:
+                    return self._request("POST", path, json=payload)
+                except ApiError as exc:
+                    last_error = exc
+                    if exc.status_code in (400, 422):
+                        continue
+                    if exc.status_code in (404, 405):
+                        break
+                    if exc.status_code == 409:
+                        raise ApiError("Пользователь с таким email уже существует", status_code=409) from exc
+                    if exc.status_code is not None and exc.status_code >= 500:
+                        continue
+                    raise
+
+        raise last_error or ApiError("Ошибка регистрации. Попробуйте позже.")
 
     def me(self) -> Dict[str, Any]:
         return self._request("GET", "/auth/me")
