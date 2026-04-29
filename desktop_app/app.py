@@ -21,6 +21,7 @@ def run() -> None:
     from desktop_app.core.state import AppState
     from desktop_app.ui.login_view import LoginView
     from desktop_app.ui.main_window import MainWindow
+    from desktop_app.ui.theme import APP_STYLESHEET
 
     logging.basicConfig(
         level=logging.INFO,
@@ -28,6 +29,7 @@ def run() -> None:
     )
 
     app = QApplication(sys.argv)
+    app.setStyleSheet(APP_STYLESHEET)
     api = ApiClient()
     state = AppState(api)
 
