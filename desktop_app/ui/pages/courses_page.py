@@ -9,13 +9,17 @@ STATUS_LABELS = {"NOT_STARTED": "Не начат", "IN_PROGRESS": "В проце
 
 
 class CoursesPage(QWidget):
-    def __init__(self, state: AppState) -> None:
+    def __init__(self, state: AppState, title_text: str = "Библиотека курсов", locked_status: str | None = None) -> None:
         super().__init__()
         self.state = state
+        self.locked_status = locked_status
         self.search = QLineEdit()
         self.search.setPlaceholderText("Поиск курсов")
         self.filter = QComboBox()
         self.filter.addItems(["ALL", "NOT_STARTED", "IN_PROGRESS", "COMPLETED", "OVERDUE"])
+        if locked_status:
+            self.filter.setCurrentText(locked_status)
+            self.filter.setEnabled(False)
         btn = QPushButton("Поиск")
         btn.setObjectName("primaryButton")
         btn.clicked.connect(self.refresh)
@@ -30,7 +34,7 @@ class CoursesPage(QWidget):
         root = QVBoxLayout(self)
         root.setContentsMargins(32, 28, 32, 28)
         root.setSpacing(16)
-        header = QLabel("Библиотека курсов")
+        header = QLabel(title_text)
         header.setStyleSheet("font-size: 44px; font-weight: 800; color: #0f172a;")
         root.addWidget(header)
         root.addLayout(top); root.addWidget(self.status); root.addWidget(sc)
@@ -48,7 +52,8 @@ class CoursesPage(QWidget):
 
     def refresh(self) -> None:
         self.status.setText("Загрузка курсов...")
-        self.state.load_courses(self.search.text().strip(), self.filter.currentText())
+        status = self.locked_status or self.filter.currentText()
+        self.state.load_courses(self.search.text().strip(), status)
 
     def _set_courses(self, courses: list) -> None:
         while self.container.count():

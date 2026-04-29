@@ -43,21 +43,25 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.dashboard = DashboardPage(state)
         self.profile = ProfilePage(state)
-        self.courses = CoursesPage(state)
+        self.courses = CoursesPage(state, title_text="Библиотека курсов")
+        self.courses_in_progress = CoursesPage(state, title_text="Курсы в процессе", locked_status="IN_PROGRESS")
+        self.courses_completed = CoursesPage(state, title_text="Завершённые курсы", locked_status="COMPLETED")
         self.forum = ForumPage(state)
         self.notifications = NotificationsPage(state)
 
         self.stack.addWidget(self.dashboard)      # 0
         self.stack.addWidget(self.profile)        # 1
         self.stack.addWidget(self.courses)        # 2
-        self.stack.addWidget(self.forum)          # 3
-        self.stack.addWidget(self.notifications)  # 4
+        self.stack.addWidget(self.courses_in_progress)  # 3
+        self.stack.addWidget(self.courses_completed)  # 4
+        self.stack.addWidget(self.forum)          # 5
+        self.stack.addWidget(self.notifications)  # 6
         body.addWidget(self.stack, 1)
 
         root_layout.addLayout(body, 1)
         self.setCentralWidget(root)
 
-        self._nav_to_stack_index = [0, 2, 2, 2, 1]
+        self._nav_to_stack_index = [0, 2, 3, 4, 1]
         self._set_active_nav(0)
         self._apply_styles()
 
@@ -122,10 +126,16 @@ class MainWindow(QMainWindow):
         for i, btn in enumerate(self.nav_buttons):
             btn.setChecked(i == active_row)
 
+    def _set_active_nav(self, active_row: int) -> None:
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == active_row)
+
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
         self.profile.refresh()
         self.courses.refresh()
+        self.courses_in_progress.refresh()
+        self.courses_completed.refresh()
         self.forum.refresh()
         self.notifications.refresh()
 
