@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QLineEdit, QPushButton, QProgressBar, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QListWidget, QPushButton, QProgressBar, QScrollArea, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
@@ -95,5 +95,43 @@ class CoursesPage(QWidget):
         action.setObjectName("primaryButton" if c.get("status") != "COMPLETED" else "secondaryButton")
         if c.get("status") == "NOT_STARTED":
             action.clicked.connect(lambda _=False, cid=c.get("id"): self.state.start_course(str(cid)))
+        action.clicked.connect(lambda _=False, course=c: self._open_course_dialog(course))
         l.addWidget(action, alignment=Qt.AlignmentFlag.AlignLeft)
         return frame
+
+    def _open_course_dialog(self, course: dict) -> None:
+        details = self.state.get_course_details(str(course.get("id"))) or course
+        dlg = QDialog(self)
+        dlg.setWindowTitle(details.get("title", "Курс"))
+        dlg.resize(640, 520)
+        layout = QVBoxLayout(dlg)
+        layout.addWidget(QLabel(f"<b>{details.get('title', '')}</b>"))
+        layout.addWidget(QLabel(details.get("description", "")))
+        layout.addWidget(QLabel(f"Статус: {STATUS_LABELS.get(details.get('status'), details.get('status'))} • Прогресс: {details.get('progress', 0)}% • Дедлайн: {details.get('deadline', '—')}"))
+        lessons_list = QListWidget()
+        lessons = details.get("lessons", [])
+        for ls in lessons:
+            lessons_list.addItem(f"{ls.get('title')} — {ls.get('status')}")
+        layout.addWidget(QLabel("Уроки"))
+        layout.addWidget(lessons_list)
+        if details.get("status") != "COMPLETED":
+            complete_btn = QPushButton("Отметить выбранный урок завершённым")
+            complete_btn.setObjectName("primaryButton")
+            def _complete() -> None:
+                row = lessons_list.currentRow()
+                if row >= 0 and row < len(lessons):
+                    self.state.complete_lesson(str(details.get("id")), str(lessons[row].get("id")))
+                    dlg.accept()
+                    self.refresh()
+            complete_btn.clicked.connect(_complete)
+            layout.addWidget(complete_btn)
+        if details.get("readyForTest") or details.get("status") in {"COMPLETED", "LOW_SCORE"}:
+            test_btn = QPushButton("Пройти итоговый тест")
+            test_btn.setObjectName("secondaryButton")
+            def _submit_test() -> None:
+                result = self.state.submit_test(str(details.get("id")), answers=[])
+                layout.addWidget(QLabel(f"Результат: {result.get('percent', 0)}%"))
+                self.refresh()
+            test_btn.clicked.connect(_submit_test)
+            layout.addWidget(test_btn)
+        dlg.exec()

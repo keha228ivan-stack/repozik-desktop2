@@ -130,6 +130,10 @@ class MainWindow(QMainWindow):
         for i, btn in enumerate(self.nav_buttons):
             btn.setChecked(i == active_row)
 
+    def _set_active_nav(self, active_row: int) -> None:
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == active_row)
+
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
         self.profile.refresh()

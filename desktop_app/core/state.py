@@ -53,6 +53,7 @@ class AppState(QObject):
         self.is_authenticated = False
         self.offline_mode = False
         self.courses: list[dict[str, Any]] = []
+        self._local_courses: list[dict[str, Any]] = self._mock_courses()
         current_user = self.local_auth.get_current_user()
         if current_user:
             self.user = current_user
@@ -110,7 +111,7 @@ class AppState(QObject):
 
     def load_courses(self, q: str = "", status: str = "ALL") -> None:
         try:
-            data = self.api.get_employee_courses() if not self.offline_mode else {"courses": self._mock_courses()}
+            data = self.api.get_employee_courses() if not self.offline_mode else {"courses": self._local_courses}
             courses = data.get("courses") or data.get("items") or []
             if q:
                 courses = [c for c in courses if q.lower() in c.get("title", "").lower()]
@@ -141,17 +142,54 @@ class AppState(QObject):
             self.profile_error.emit(str(exc))
 
     def start_course(self, course_id: str) -> None:
-        if not self.offline_mode:
+        if self.offline_mode:
+            course = self.get_course_details(course_id)
+            if course and course.get("status") == "NOT_STARTED":
+                course["status"] = "IN_PROGRESS"
+                course["startedAt"] = datetime.utcnow().isoformat()
+        else:
             self.api.start_course(course_id)
 
     def complete_lesson(self, course_id: str, lesson_id: str) -> None:
-        if not self.offline_mode:
+        if self.offline_mode:
+            course = self.get_course_details(course_id)
+            if not course:
+                return
+            lessons = course.get("lessons", [])
+            for lesson in lessons:
+                if str(lesson.get("id")) == str(lesson_id):
+                    lesson["status"] = "COMPLETED"
+            total = max(len(lessons), 1)
+            completed = len([l for l in lessons if l.get("status") == "COMPLETED"])
+            course["progress"] = int((completed / total) * 100)
+            if completed > 0 and course.get("status") == "NOT_STARTED":
+                course["status"] = "IN_PROGRESS"
+            if completed == total:
+                course["readyForTest"] = True
+        else:
             self.api.complete_lesson(course_id, lesson_id)
 
     def submit_test(self, course_id: str, answers: list[dict[str, Any]]) -> dict[str, Any]:
         if self.offline_mode:
-            return {"score": 7, "maxScore": 10, "percent": 70, "passed": True, "attempts": 1, "completedAt": datetime.utcnow().isoformat()}
+            course = self.get_course_details(course_id)
+            score = 7
+            max_score = 10
+            percent = int((score / max_score) * 100)
+            passed = percent >= 70
+            result = {"score": score, "maxScore": max_score, "percent": percent, "passed": passed, "attempts": 1, "completedAt": datetime.utcnow().isoformat()}
+            if course:
+                course["testResult"] = f"{percent}%"
+                course["status"] = "COMPLETED" if passed else "LOW_SCORE"
+                course["completedAt"] = result["completedAt"]
+                course["progress"] = 100
+            return result
         return self.api.submit_test(course_id, answers)
+
+    def get_course_details(self, course_id: str) -> dict[str, Any] | None:
+        for c in self._local_courses:
+            if str(c.get("id")) == str(course_id):
+                return c
+        return None
 
 
     def load_notifications(self) -> None:
@@ -179,10 +217,10 @@ class AppState(QObject):
 
     def _mock_courses(self) -> list[dict[str, Any]]:
         return [
-            {"id": "1", "title": "Охрана труда", "description": "Базовые правила", "status": "IN_PROGRESS", "progress": 35, "lessonsCount": 6, "estimatedMinutes": 120, "deadline": "2026-05-03", "lastLesson": "Модуль 2"},
-            {"id": "2", "title": "Командная работа", "description": "Коммуникации", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 5, "estimatedMinutes": 95, "deadline": "2026-05-12"},
-            {"id": "3", "title": "Антифрод", "description": "Проверка рисков", "status": "COMPLETED", "progress": 100, "lessonsCount": 7, "estimatedMinutes": 140, "deadline": "2026-04-20", "testResult": "86%"},
-            {"id": "4", "title": "Этика и комплаенс", "description": "Нормы поведения", "status": "OVERDUE", "progress": 50, "lessonsCount": 8, "estimatedMinutes": 170, "deadline": "2026-04-10", "lastLesson": "Модуль 4"},
+            {"id": "1", "title": "Охрана труда", "description": "Базовые правила", "status": "IN_PROGRESS", "progress": 35, "lessonsCount": 6, "estimatedMinutes": 120, "deadline": "2026-05-03", "lastLesson": "Модуль 2", "lessons": [{"id": "1-1", "title": "Введение", "status": "COMPLETED"}, {"id": "1-2", "title": "Инструктаж", "status": "AVAILABLE"}, {"id": "1-3", "title": "Практика", "status": "AVAILABLE"}]},
+            {"id": "2", "title": "Командная работа", "description": "Коммуникации", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 5, "estimatedMinutes": 95, "deadline": "2026-05-12", "lessons": [{"id": "2-1", "title": "Роли в команде", "status": "AVAILABLE"}, {"id": "2-2", "title": "Обратная связь", "status": "AVAILABLE"}]},
+            {"id": "3", "title": "Антифрод", "description": "Проверка рисков", "status": "COMPLETED", "progress": 100, "lessonsCount": 7, "estimatedMinutes": 140, "deadline": "2026-04-20", "testResult": "86%", "lessons": [{"id": "3-1", "title": "Риски", "status": "COMPLETED"}]},
+            {"id": "4", "title": "Этика и комплаенс", "description": "Нормы поведения", "status": "OVERDUE", "progress": 50, "lessonsCount": 8, "estimatedMinutes": 170, "deadline": "2026-04-10", "lastLesson": "Модуль 4", "lessons": [{"id": "4-1", "title": "Кодекс", "status": "COMPLETED"}, {"id": "4-2", "title": "Конфликты интересов", "status": "AVAILABLE"}]},
         ]
 
     def _mock_profile(self) -> dict[str, Any]:
