@@ -12,7 +12,12 @@ class DashboardPage(QWidget):
         root.setContentsMargins(28, 12, 24, 24)
         container = QFrame()
         body = QVBoxLayout(container)
-        body.addWidget(QLabel("Dashboard"))
+        title = QLabel("Dashboard")
+        title.setStyleSheet("font-size: 42px; font-weight: 800; color: #0f172a;")
+        subtitle = QLabel("Обзор вашего обучения")
+        subtitle.setStyleSheet("font-size: 20px; color: #64748b; margin-bottom: 8px;")
+        body.addWidget(title)
+        body.addWidget(subtitle)
         self.empty = QLabel("")
         body.addWidget(self.empty)
 
@@ -22,8 +27,6 @@ class DashboardPage(QWidget):
             ("inProgressCourses", "В процессе"),
             ("completedCourses", "Завершено"),
             ("averageProgress", "Средний прогресс"),
-            ("averageScore", "Средний балл"),
-            ("overdueCourses", "Просрочено"),
         ]):
             card = QFrame()
             card.setObjectName("surfaceCard")
@@ -37,7 +40,7 @@ class DashboardPage(QWidget):
             val.setObjectName("metricValue")
             layout.addWidget(val)
             self.cards[key] = val
-            metrics.addWidget(card, i // 3, i % 3)
+            metrics.addWidget(card, 0, i)
         body.addLayout(metrics)
         self.progress = QProgressBar()
         self.progress.setRange(0, 100)

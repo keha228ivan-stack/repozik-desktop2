@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         root_layout.addLayout(body, 1)
         self.setCentralWidget(root)
 
-        self._nav_to_stack_index = [0, 2, 2, 2, 4, 1]
+        self._nav_to_stack_index = [0, 2, 2, 2, 1]
         self.nav.currentRowChanged.connect(self._on_nav_changed)
         self.nav.setCurrentRow(0)
         self._apply_styles()
@@ -65,16 +65,19 @@ class MainWindow(QMainWindow):
         layout = QHBoxLayout(bar)
         layout.setContentsMargins(16, 8, 16, 8)
 
-        self.page_title = QLabel("Dashboard")
-        self.page_title.setObjectName("pageTitle")
-        brand = QLabel("HRLMS")
+        titles = QVBoxLayout()
+        brand = QLabel("Система управления персоналом")
         brand.setObjectName("brand")
+        subtitle = QLabel("Мой прогресс и активные курсы")
+        subtitle.setObjectName("headerSubtitle")
+        titles.addWidget(brand)
+        titles.addWidget(subtitle)
         user_name = QLabel((self.state.user or {}).get("fullName", "Сотрудник"))
         user_name.setObjectName("userName")
         logout_btn = QPushButton("Выйти")
         logout_btn.setObjectName("secondaryButton")
         logout_btn.clicked.connect(self.state.logout)
-        layout.addWidget(self.page_title)
+        layout.addLayout(titles)
         layout.addStretch(1)
         layout.addWidget(user_name)
         layout.addWidget(logout_btn)
@@ -107,7 +110,6 @@ class MainWindow(QMainWindow):
             "📚 Библиотека курсов",
             "⏳ В процессе",
             "✅ Завершённые",
-            "🔔 Уведомления",
             "👤 Профиль",
         ]:
             self.nav.addItem(QListWidgetItem(text))
@@ -130,10 +132,10 @@ class MainWindow(QMainWindow):
     def _apply_styles(self) -> None:
         self.setStyleSheet(
             """
-            QMainWindow { background: #F8F9FA; }
+            QMainWindow { background: #F3F6FA; }
             QFrame#topbar { background: #FFFFFF; border-bottom: 1px solid #E5E7EB; min-height: 56px; max-height: 56px; }
-            QLabel#brand { font-size: 20px; font-weight: 700; color: #2563EB; }
-            QLabel#pageTitle { font-size: 20px; font-weight: 700; color: #111827; }
+            QLabel#brand { font-size: 20px; font-weight: 800; color: #0f172a; }
+            QLabel#headerSubtitle { font-size: 13px; color: #64748b; }
             QLabel#userName { font-size: 14px; color: #6B7280; padding-right: 8px; }
             QFrame#sidebar {
                 background: #FFFFFF;
@@ -156,10 +158,9 @@ class MainWindow(QMainWindow):
                 margin: 3px 0;
             }
             QListWidget::item:selected {
-                background: #EFF6FF;
-                color: #2563EB;
+                background: #2563EB;
+                color: #FFFFFF;
                 font-weight: 600;
-                border-left: 3px solid #2563EB;
             }
             """
         )

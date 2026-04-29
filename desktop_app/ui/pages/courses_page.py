@@ -5,6 +5,7 @@ from desktop_app.core.state import AppState
 
 
 STATUS_COLORS = {"NOT_STARTED": "#6b7280", "IN_PROGRESS": "#2563eb", "COMPLETED": "#16a34a", "OVERDUE": "#dc2626", "LOW_SCORE": "#f59e0b"}
+STATUS_LABELS = {"NOT_STARTED": "Не начат", "IN_PROGRESS": "В процессе", "COMPLETED": "Завершён", "OVERDUE": "Просрочен", "LOW_SCORE": "Низкий балл"}
 
 
 class CoursesPage(QWidget):
@@ -62,7 +63,8 @@ class CoursesPage(QWidget):
         color = STATUS_COLORS.get(c.get("status"), "#6b7280")
         title = QLabel(c.get('title')); title.setObjectName("courseTitle")
         desc = QLabel(c.get("description", "")); desc.setObjectName("courseMeta")
-        badge = QLabel(c.get("status")); badge.setObjectName("courseBadge")
+        status = c.get("status")
+        badge = QLabel(STATUS_LABELS.get(status, status)); badge.setObjectName("courseBadge")
         badge.setStyleSheet(f"color:{color};")
         meta = QLabel(f"Уроков: {c.get('lessonsCount', 0)} • ~{c.get('estimatedMinutes', 0)} мин • Дедлайн: {c.get('deadline', '—')}")
         meta.setObjectName("courseMeta")
