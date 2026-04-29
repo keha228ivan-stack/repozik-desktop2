@@ -18,6 +18,15 @@ from desktop_app.ui.pages.forum_page import ForumPage
 from desktop_app.ui.pages.notifications_page import NotificationsPage
 from desktop_app.ui.pages.profile_page import ProfilePage
 
+
+class _NoWheelListWidget:
+    @staticmethod
+    def patch(list_widget) -> None:
+        def _blocked_wheel_event(event):  # type: ignore[no-untyped-def]
+            event.ignore()
+        list_widget.wheelEvent = _blocked_wheel_event  # type: ignore[assignment]
+
+
 class MainWindow(QMainWindow):
     def __init__(self, state: AppState) -> None:
         super().__init__()
@@ -94,22 +103,16 @@ class MainWindow(QMainWindow):
         layout.setContentsMargins(20, 10, 14, 10)
         layout.setSpacing(8)
 
-        title = QLabel("Система управления\nперсоналом")
-        title.setObjectName("appTitle")
-        title.setWordWrap(True)
-        subtitle = QLabel("Мой прогресс и активные курсы")
-        subtitle.setObjectName("appSubtitle")
-        layout.addWidget(title)
-        layout.addWidget(subtitle)
-        layout.addSpacing(12)
+        layout.addSpacing(4)
 
         self.nav = QListWidget()
+        _NoWheelListWidget.patch(self.nav)
         self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         self.nav.setSpacing(2)
-        self.nav.setVerticalScrollMode(self.nav.ScrollMode.ScrollPerPixel)
+        self.nav.setVerticalScrollMode(self.nav.ScrollMode.ScrollPerItem)
         self.nav.setSizeAdjustPolicy(self.nav.SizeAdjustPolicy.AdjustToContents)
-        self.nav.setFixedHeight(5 * 48 + 20)
+        self.nav.setFixedHeight(5 * 48 + 10)
         for text in [
             "📊 Dashboard",
             "📚 Библиотека курсов",
