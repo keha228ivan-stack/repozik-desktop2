@@ -88,6 +88,9 @@ class LoginView(QWidget):
         self.reg_password = QLineEdit()
         self.reg_password.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_password.setPlaceholderText("Не менее 8 символов")
+        self.reg_password_confirm = QLineEdit()
+        self.reg_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
+        self.reg_password_confirm.setPlaceholderText("Повторите пароль")
 
         info = QLabel("Регистрация доступна только для сотрудников")
         info.setObjectName("hint")
@@ -99,6 +102,7 @@ class LoginView(QWidget):
         form.addRow("ФИО", self.reg_name)
         form.addRow("Email", self.reg_email)
         form.addRow("Пароль", self.reg_password)
+        form.addRow("Подтверждение", self.reg_password_confirm)
         form.addRow("", info)
         form.addRow("", btn)
         return w
@@ -121,6 +125,9 @@ class LoginView(QWidget):
             return
         if len(password) < 8:
             self._show_error("Пароль должен содержать минимум 8 символов")
+            return
+        if password != self.reg_password_confirm.text():
+            self._show_error("Пароли не совпадают")
             return
         if "@" not in email:
             self._show_error("Введите корректный email")
