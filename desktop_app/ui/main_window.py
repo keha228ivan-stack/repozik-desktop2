@@ -9,6 +9,7 @@ from PySide6.QtWidgets import (
     QVBoxLayout,
     QWidget,
     QPushButton,
+    QSizePolicy,
 )
 
 from desktop_app.core.state import AppState
@@ -17,14 +18,6 @@ from desktop_app.ui.pages.dashboard_page import DashboardPage
 from desktop_app.ui.pages.forum_page import ForumPage
 from desktop_app.ui.pages.notifications_page import NotificationsPage
 from desktop_app.ui.pages.profile_page import ProfilePage
-
-
-class _NoWheelListWidget:
-    @staticmethod
-    def patch(list_widget) -> None:
-        def _blocked_wheel_event(event):  # type: ignore[no-untyped-def]
-            event.ignore()
-        list_widget.wheelEvent = _blocked_wheel_event  # type: ignore[assignment]
 
 
 class MainWindow(QMainWindow):
@@ -65,8 +58,7 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(root)
 
         self._nav_to_stack_index = [0, 2, 2, 2, 1]
-        self.nav.currentRowChanged.connect(self._on_nav_changed)
-        self.nav.setCurrentRow(0)
+        self._set_active_nav(0)
         self._apply_styles()
 
     def _build_topbar(self) -> QWidget:
@@ -94,9 +86,6 @@ class MainWindow(QMainWindow):
         return bar
 
     def _build_sidebar(self) -> QWidget:
-        # Local import for extra runtime safety in bundled/partial environments.
-        from PySide6.QtWidgets import QListWidget, QListWidgetItem
-
         side = QFrame()
         side.setObjectName("sidebar")
         layout = QVBoxLayout(side)
@@ -105,30 +94,33 @@ class MainWindow(QMainWindow):
 
         layout.addSpacing(4)
 
-        self.nav = QListWidget()
-        _NoWheelListWidget.patch(self.nav)
-        self.nav.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.nav.setHorizontalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        self.nav.setSpacing(2)
-        self.nav.setVerticalScrollMode(self.nav.ScrollMode.ScrollPerItem)
-        self.nav.setSizeAdjustPolicy(self.nav.SizeAdjustPolicy.AdjustIgnored)
-        for text in [
+        self.nav_buttons: list[QPushButton] = []
+        for idx, text in enumerate([
             "📊 Dashboard",
             "📚 Библиотека курсов",
             "⏳ В процессе",
             "✅ Завершённые",
             "👤 Профиль",
-        ]:
-            self.nav.addItem(QListWidgetItem(text))
-        self.nav.setSizePolicy(self.nav.sizePolicy().horizontalPolicy(), self.nav.sizePolicy().Policy.Expanding)
-        layout.addWidget(self.nav)
+        ]):
+            btn = QPushButton(text)
+            btn.setCheckable(True)
+            btn.setObjectName("navButton")
+            btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            btn.clicked.connect(lambda _=False, r=idx: self._on_nav_changed(r))
+            self.nav_buttons.append(btn)
+            layout.addWidget(btn)
         layout.addStretch(1)
         return side
 
     def _on_nav_changed(self, row: int) -> None:
         if 0 <= row < len(self._nav_to_stack_index):
+            self._set_active_nav(row)
             self.stack.setCurrentIndex(self._nav_to_stack_index[row])
             self.page_title.setText(self.nav.item(row).text().split(" ", 1)[1] if " " in self.nav.item(row).text() else self.nav.item(row).text())
+
+    def _set_active_nav(self, active_row: int) -> None:
+        for i, btn in enumerate(self.nav_buttons):
+            btn.setChecked(i == active_row)
 
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
@@ -153,20 +145,17 @@ class MainWindow(QMainWindow):
             }
             QLabel#appTitle { font-size: 18px; font-weight: 700; color: #111827; }
             QLabel#appSubtitle { font-size: 14px; color: #70757e; margin-top: 2px; }
-            QListWidget {
-                border: none;
+            QPushButton#navButton {
                 background: transparent;
+                border: none;
+                text-align: left;
                 color: #4B5563;
                 font-size: 14px;
-                outline: none;
-            }
-            QListWidget::item {
                 min-height: 38px;
                 padding: 8px 12px;
                 border-radius: 10px;
-                margin: 3px 0;
             }
-            QListWidget::item:selected {
+            QPushButton#navButton:checked {
                 background: #2563EB;
                 color: #FFFFFF;
                 font-weight: 600;
