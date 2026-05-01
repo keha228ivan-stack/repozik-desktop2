@@ -100,7 +100,7 @@ class CoursesPage(QWidget):
             badge_bg = "#E0E7FF"
             color = "#1D4ED8"
         badge.setStyleSheet(f"color:{color}; background:{badge_bg};")
-        progress = QProgressBar(); progress.setRange(0,100); progress.setValue(int(c.get("progress",0)))
+        progress = QProgressBar(); progress.setRange(0,100); progress.setValue(int(c.get("progress",0))); progress.setTextVisible(False)
         percent = QLabel(f"{int(c.get('progress',0))}%")
         percent.setObjectName("courseMeta")
         l.addWidget(desc); l.addWidget(badge); l.addWidget(percent); l.addWidget(progress)
