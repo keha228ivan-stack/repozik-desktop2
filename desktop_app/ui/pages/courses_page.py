@@ -136,24 +136,35 @@ class CoursesPage(QWidget):
             lessons_list.addItem(f"{ls.get('title')} — {ls.get('status')}")
         layout.addWidget(QLabel("Уроки"))
         layout.addWidget(lessons_list)
-        if details.get("status") != "COMPLETED":
-            complete_btn = QPushButton("Отметить выбранный урок завершённым")
-            complete_btn.setObjectName("primaryButton")
-            def _complete() -> None:
-                row = lessons_list.currentRow()
-                if row >= 0 and row < len(lessons):
-                    self.state.complete_lesson(str(details.get("id")), str(lessons[row].get("id")))
-                    dlg.accept()
-                    self.refresh()
-            complete_btn.clicked.connect(_complete)
-            layout.addWidget(complete_btn)
-        if details.get("readyForTest") or details.get("status") in {"COMPLETED", "LOW_SCORE"}:
-            test_btn = QPushButton("Пройти итоговый тест")
-            test_btn.setObjectName("secondaryButton")
-            def _submit_test() -> None:
-                result = self.state.submit_test(str(details.get("id")), answers=[])
-                layout.addWidget(QLabel(f"Результат: {result.get('percent', 0)}%"))
+        if self.locked_status is None:
+            start_btn = QPushButton("Начать обучение")
+            start_btn.setObjectName("primaryButton")
+            start_btn.setEnabled(details.get("status") == "NOT_STARTED")
+            def _start() -> None:
+                self.state.start_course(str(details.get("id")))
+                dlg.accept()
                 self.refresh()
-            test_btn.clicked.connect(_submit_test)
-            layout.addWidget(test_btn)
+            start_btn.clicked.connect(_start)
+            layout.addWidget(start_btn)
+        else:
+            if details.get("status") != "COMPLETED":
+                complete_btn = QPushButton("Отметить выбранный урок завершённым")
+                complete_btn.setObjectName("primaryButton")
+                def _complete() -> None:
+                    row = lessons_list.currentRow()
+                    if row >= 0 and row < len(lessons):
+                        self.state.complete_lesson(str(details.get("id")), str(lessons[row].get("id")))
+                        dlg.accept()
+                        self.refresh()
+                complete_btn.clicked.connect(_complete)
+                layout.addWidget(complete_btn)
+            if details.get("readyForTest") or details.get("status") in {"COMPLETED", "LOW_SCORE"}:
+                test_btn = QPushButton("Пройти итоговый тест")
+                test_btn.setObjectName("secondaryButton")
+                def _submit_test() -> None:
+                    result = self.state.submit_test(str(details.get("id")), answers=[])
+                    layout.addWidget(QLabel(f"Результат: {result.get('percent', 0)}%"))
+                    self.refresh()
+                test_btn.clicked.connect(_submit_test)
+                layout.addWidget(test_btn)
         dlg.exec()
