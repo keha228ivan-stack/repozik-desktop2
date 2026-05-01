@@ -146,6 +146,11 @@ class AppState(QObject):
             if course and course.get("status") != "COMPLETED":
                 course["status"] = "IN_PROGRESS"
                 course["startedAt"] = datetime.utcnow().isoformat()
+                course["progress"] = 0
+                course["readyForTest"] = False
+                course.pop("testResult", None)
+                for lesson in course.get("lessons", []):
+                    lesson["status"] = "AVAILABLE"
         else:
             self.api.start_course(course_id)
         self.load_dashboard()
