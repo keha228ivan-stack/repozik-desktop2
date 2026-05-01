@@ -110,6 +110,7 @@ class MainWindow(QMainWindow):
             btn.setCheckable(True)
             btn.setObjectName("navButton")
             btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             btn.clicked.connect(lambda _=False, r=idx: self._on_nav_changed(r))
             self.nav_buttons.append(btn)
             layout.addWidget(btn)
@@ -168,5 +169,6 @@ class MainWindow(QMainWindow):
                 color: #FFFFFF;
                 font-weight: 600;
             }
+            QPushButton#navButton:focus { outline: none; }
             """
         )

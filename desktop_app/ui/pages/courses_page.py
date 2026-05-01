@@ -86,6 +86,10 @@ class CoursesPage(QWidget):
         l.addWidget(meta)
 
         if self.locked_status is None:
+            open_btn = QPushButton("Открыть курс")
+            open_btn.setObjectName("secondaryButton")
+            open_btn.clicked.connect(lambda _=False, course=c: self._open_course_dialog(course))
+            l.addWidget(open_btn, alignment=Qt.AlignmentFlag.AlignLeft)
             return frame
 
         badge = QLabel(badge_text); badge.setObjectName("courseBadge")
