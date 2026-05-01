@@ -52,12 +52,17 @@ class CoursesPage(QWidget):
 
     def refresh(self) -> None:
         self.status.setText("Загрузка курсов...")
-        status = self.locked_status or self.filter.currentText()
-        self.state.load_courses(self.search.text().strip(), status)
+        self.state.load_courses()
 
     def _set_courses(self, courses: list) -> None:
-        if self.locked_status:
-            courses = [c for c in courses if c.get("status") == self.locked_status]
+        query = self.search.text().strip().lower()
+        if query:
+            courses = [c for c in courses if query in c.get("title", "").lower()]
+
+        status = self.locked_status or self.filter.currentText()
+        if status and status != "ALL":
+            courses = [c for c in courses if c.get("status") == status]
+
         while self.container.count():
             child = self.container.takeAt(0)
             if child.widget():
@@ -79,6 +84,19 @@ class CoursesPage(QWidget):
         desc = QLabel(c.get("description", "")); desc.setObjectName("courseMeta")
         status = c.get("status")
         badge_text = "Доступен" if self.locked_status == "NOT_STARTED" else STATUS_LABELS.get(status, status)
+        meta = QLabel(f"Уроков: {c.get('lessonsCount', 0)} • Дедлайн: {c.get('deadline', '—')}")
+        meta.setObjectName("courseMeta")
+
+        l.addWidget(title)
+        l.addWidget(meta)
+
+        if self.locked_status is None:
+            open_btn = QPushButton("Открыть курс")
+            open_btn.setObjectName("secondaryButton")
+            open_btn.clicked.connect(lambda _=False, course=c: self._open_course_dialog(course))
+            l.addWidget(open_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+            return frame
+
         badge = QLabel(badge_text); badge.setObjectName("courseBadge")
         badge_bg = "#F3F4F6"
         if status == "IN_PROGRESS":
@@ -91,12 +109,10 @@ class CoursesPage(QWidget):
             badge_bg = "#E0E7FF"
             color = "#1D4ED8"
         badge.setStyleSheet(f"color:{color}; background:{badge_bg};")
-        meta = QLabel(f"Уроков: {c.get('lessonsCount', 0)} • ~{c.get('estimatedMinutes', 0)} мин • Дедлайн: {c.get('deadline', '—')}")
-        meta.setObjectName("courseMeta")
-        progress = QProgressBar(); progress.setRange(0,100); progress.setValue(int(c.get("progress",0)))
+        progress = QProgressBar(); progress.setRange(0,100); progress.setValue(int(c.get("progress",0))); progress.setTextVisible(False)
         percent = QLabel(f"{int(c.get('progress',0))}%")
         percent.setObjectName("courseMeta")
-        l.addWidget(title); l.addWidget(desc); l.addWidget(badge); l.addWidget(percent); l.addWidget(progress); l.addWidget(meta)
+        l.addWidget(desc); l.addWidget(badge); l.addWidget(percent); l.addWidget(progress)
         action = QPushButton("Начать" if c.get("status") == "NOT_STARTED" else "Продолжить" if c.get("status") in {"IN_PROGRESS", "OVERDUE", "LOW_SCORE"} else "Посмотреть результат")
         action.setObjectName("primaryButton" if c.get("status") != "COMPLETED" else "secondaryButton")
         if c.get("status") == "NOT_STARTED":
@@ -120,24 +136,35 @@ class CoursesPage(QWidget):
             lessons_list.addItem(f"{ls.get('title')} — {ls.get('status')}")
         layout.addWidget(QLabel("Уроки"))
         layout.addWidget(lessons_list)
-        if details.get("status") != "COMPLETED":
-            complete_btn = QPushButton("Отметить выбранный урок завершённым")
-            complete_btn.setObjectName("primaryButton")
-            def _complete() -> None:
-                row = lessons_list.currentRow()
-                if row >= 0 and row < len(lessons):
-                    self.state.complete_lesson(str(details.get("id")), str(lessons[row].get("id")))
-                    dlg.accept()
-                    self.refresh()
-            complete_btn.clicked.connect(_complete)
-            layout.addWidget(complete_btn)
-        if details.get("readyForTest") or details.get("status") in {"COMPLETED", "LOW_SCORE"}:
-            test_btn = QPushButton("Пройти итоговый тест")
-            test_btn.setObjectName("secondaryButton")
-            def _submit_test() -> None:
-                result = self.state.submit_test(str(details.get("id")), answers=[])
-                layout.addWidget(QLabel(f"Результат: {result.get('percent', 0)}%"))
+        if self.locked_status is None:
+            start_btn = QPushButton("Начать обучение")
+            start_btn.setObjectName("primaryButton")
+            start_btn.setEnabled(details.get("status") == "NOT_STARTED")
+            def _start() -> None:
+                self.state.start_course(str(details.get("id")))
+                dlg.accept()
                 self.refresh()
-            test_btn.clicked.connect(_submit_test)
-            layout.addWidget(test_btn)
+            start_btn.clicked.connect(_start)
+            layout.addWidget(start_btn)
+        else:
+            if details.get("status") != "COMPLETED":
+                complete_btn = QPushButton("Отметить выбранный урок завершённым")
+                complete_btn.setObjectName("primaryButton")
+                def _complete() -> None:
+                    row = lessons_list.currentRow()
+                    if row >= 0 and row < len(lessons):
+                        self.state.complete_lesson(str(details.get("id")), str(lessons[row].get("id")))
+                        dlg.accept()
+                        self.refresh()
+                complete_btn.clicked.connect(_complete)
+                layout.addWidget(complete_btn)
+            if details.get("readyForTest") or details.get("status") in {"COMPLETED", "LOW_SCORE"}:
+                test_btn = QPushButton("Пройти итоговый тест")
+                test_btn.setObjectName("secondaryButton")
+                def _submit_test() -> None:
+                    result = self.state.submit_test(str(details.get("id")), answers=[])
+                    layout.addWidget(QLabel(f"Результат: {result.get('percent', 0)}%"))
+                    self.refresh()
+                test_btn.clicked.connect(_submit_test)
+                layout.addWidget(test_btn)
         dlg.exec()
