@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.dashboard = DashboardPage(state)
         self.profile = ProfilePage(state)
-        self.courses = CoursesPage(state, title_text="Библиотека курсов", locked_status="NOT_STARTED")
+        self.courses = CoursesPage(state, title_text="Библиотека курсов")
         self.courses_in_progress = CoursesPage(state, title_text="Курсы в процессе", locked_status="IN_PROGRESS")
         self.courses_completed = CoursesPage(state, title_text="Завершённые курсы", locked_status="COMPLETED")
         self.forum = ForumPage(state)
@@ -110,6 +110,7 @@ class MainWindow(QMainWindow):
             btn.setCheckable(True)
             btn.setObjectName("navButton")
             btn.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Fixed)
+            btn.setFocusPolicy(Qt.FocusPolicy.NoFocus)
             btn.clicked.connect(lambda _=False, r=idx: self._on_nav_changed(r))
             self.nav_buttons.append(btn)
             layout.addWidget(btn)
@@ -120,23 +121,13 @@ class MainWindow(QMainWindow):
         if 0 <= row < len(self._nav_to_stack_index):
             self._set_active_nav(row)
             self.stack.setCurrentIndex(self._nav_to_stack_index[row])
-            self.page_title.setText(self.nav.item(row).text().split(" ", 1)[1] if " " in self.nav.item(row).text() else self.nav.item(row).text())
 
     def _set_active_nav(self, active_row: int) -> None:
         for i, btn in enumerate(self.nav_buttons):
             btn.setChecked(i == active_row)
 
-    def _set_active_nav(self, active_row: int) -> None:
-        for i, btn in enumerate(self.nav_buttons):
-            btn.setChecked(i == active_row)
 
-    def _set_active_nav(self, active_row: int) -> None:
-        for i, btn in enumerate(self.nav_buttons):
-            btn.setChecked(i == active_row)
 
-    def _set_active_nav(self, active_row: int) -> None:
-        for i, btn in enumerate(self.nav_buttons):
-            btn.setChecked(i == active_row)
 
     def refresh_all_pages(self) -> None:
         self.dashboard.refresh()
@@ -178,5 +169,6 @@ class MainWindow(QMainWindow):
                 color: #FFFFFF;
                 font-weight: 600;
             }
+            QPushButton#navButton:focus { outline: none; }
             """
         )
