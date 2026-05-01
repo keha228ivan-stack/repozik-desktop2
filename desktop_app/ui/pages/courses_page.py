@@ -140,6 +140,15 @@ class CoursesPage(QWidget):
                 lessons_list.addItem(f"{lesson_title} — {ls.get('status')}")
         layout.addWidget(QLabel("Уроки"))
         layout.addWidget(lessons_list)
+        lesson_content = QLabel("Выберите урок, чтобы посмотреть содержимое")
+        lesson_content.setWordWrap(True)
+        lesson_content.setObjectName("courseMeta")
+        def _show_lesson_content() -> None:
+            row = lessons_list.currentRow()
+            if 0 <= row < len(lessons):
+                lesson_content.setText(lessons[row].get("content", "Содержимое урока пока не заполнено"))
+        lessons_list.currentRowChanged.connect(lambda _row: _show_lesson_content())
+        layout.addWidget(lesson_content)
         if self.locked_status is None:
             start_btn = QPushButton("Начать обучение")
             start_btn.setObjectName("primaryButton")
