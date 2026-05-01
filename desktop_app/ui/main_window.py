@@ -43,7 +43,7 @@ class MainWindow(QMainWindow):
         self.stack = QStackedWidget()
         self.dashboard = DashboardPage(state)
         self.profile = ProfilePage(state)
-        self.courses = CoursesPage(state, title_text="Библиотека курсов", locked_status="NOT_STARTED")
+        self.courses = CoursesPage(state, title_text="Библиотека курсов")
         self.courses_in_progress = CoursesPage(state, title_text="Курсы в процессе", locked_status="IN_PROGRESS")
         self.courses_completed = CoursesPage(state, title_text="Завершённые курсы", locked_status="COMPLETED")
         self.forum = ForumPage(state)
