@@ -133,13 +133,17 @@ class CoursesPage(QWidget):
         lessons_list = QListWidget()
         lessons = details.get("lessons", [])
         for ls in lessons:
-            lessons_list.addItem(f"{ls.get('title')} — {ls.get('status')}")
+            lesson_title = ls.get('title')
+            if self.locked_status is None:
+                lessons_list.addItem(f"{lesson_title}")
+            else:
+                lessons_list.addItem(f"{lesson_title} — {ls.get('status')}")
         layout.addWidget(QLabel("Уроки"))
         layout.addWidget(lessons_list)
         if self.locked_status is None:
             start_btn = QPushButton("Начать обучение")
             start_btn.setObjectName("primaryButton")
-            start_btn.setEnabled(details.get("status") == "NOT_STARTED")
+            start_btn.setEnabled(details.get("status") != "COMPLETED")
             def _start() -> None:
                 self.state.start_course(str(details.get("id")))
                 dlg.accept()

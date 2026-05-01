@@ -143,11 +143,12 @@ class AppState(QObject):
     def start_course(self, course_id: str) -> None:
         if self.offline_mode:
             course = self.get_course_details(course_id)
-            if course and course.get("status") == "NOT_STARTED":
+            if course and course.get("status") != "COMPLETED":
                 course["status"] = "IN_PROGRESS"
                 course["startedAt"] = datetime.utcnow().isoformat()
         else:
             self.api.start_course(course_id)
+        self.load_dashboard()
 
     def complete_lesson(self, course_id: str, lesson_id: str) -> None:
         if self.offline_mode:
@@ -167,6 +168,7 @@ class AppState(QObject):
                 course["readyForTest"] = True
         else:
             self.api.complete_lesson(course_id, lesson_id)
+        self.load_dashboard()
 
     def submit_test(self, course_id: str, answers: list[dict[str, Any]]) -> dict[str, Any]:
         if self.offline_mode:
@@ -181,8 +183,11 @@ class AppState(QObject):
                 course["status"] = "COMPLETED" if passed else "LOW_SCORE"
                 course["completedAt"] = result["completedAt"]
                 course["progress"] = 100
+            self.load_dashboard()
             return result
-        return self.api.submit_test(course_id, answers)
+        result = self.api.submit_test(course_id, answers)
+        self.load_dashboard()
+        return result
 
     def get_course_details(self, course_id: str) -> dict[str, Any] | None:
         for c in self._local_courses:
