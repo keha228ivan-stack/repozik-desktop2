@@ -101,13 +101,12 @@ class AppState(QObject):
         self.auth_changed.emit(False)
 
     def load_dashboard(self) -> None:
-        data = self._dashboard_fallback()
-        if not self.offline_mode:
-            try:
-                data = self.api.get_dashboard()
-            except ApiError:
-                pass
-        self.dashboard_changed.emit(data)
+        try:
+            data = self.api.get_employee_courses() if not self.offline_mode else {"courses": self._local_courses}
+            courses = data.get("courses") or data.get("items") or []
+            self.dashboard_changed.emit(self._build_dashboard_from_courses(courses))
+        except ApiError:
+            self.dashboard_changed.emit(self._build_dashboard_from_courses(self._local_courses))
 
     def load_courses(self, q: str = "", status: str = "ALL") -> None:
         try:
@@ -144,11 +143,17 @@ class AppState(QObject):
     def start_course(self, course_id: str) -> None:
         if self.offline_mode:
             course = self.get_course_details(course_id)
-            if course and course.get("status") == "NOT_STARTED":
+            if course and course.get("status") != "COMPLETED":
                 course["status"] = "IN_PROGRESS"
                 course["startedAt"] = datetime.utcnow().isoformat()
+                course["progress"] = 0
+                course["readyForTest"] = False
+                course.pop("testResult", None)
+                for lesson in course.get("lessons", []):
+                    lesson["status"] = "AVAILABLE"
         else:
             self.api.start_course(course_id)
+        self.load_dashboard()
 
     def complete_lesson(self, course_id: str, lesson_id: str) -> None:
         if self.offline_mode:
@@ -168,6 +173,7 @@ class AppState(QObject):
                 course["readyForTest"] = True
         else:
             self.api.complete_lesson(course_id, lesson_id)
+        self.load_dashboard()
 
     def submit_test(self, course_id: str, answers: list[dict[str, Any]]) -> dict[str, Any]:
         if self.offline_mode:
@@ -182,8 +188,11 @@ class AppState(QObject):
                 course["status"] = "COMPLETED" if passed else "LOW_SCORE"
                 course["completedAt"] = result["completedAt"]
                 course["progress"] = 100
+            self.load_dashboard()
             return result
-        return self.api.submit_test(course_id, answers)
+        result = self.api.submit_test(course_id, answers)
+        self.load_dashboard()
+        return result
 
     def get_course_details(self, course_id: str) -> dict[str, Any] | None:
         for c in self._local_courses:
@@ -202,6 +211,27 @@ class AppState(QObject):
 
     def create_topic(self, title: str, body: str) -> bool:
         return False
+
+    def _build_dashboard_from_courses(self, courses: list[dict[str, Any]]) -> dict[str, Any]:
+        total = len(courses)
+        in_progress = len([c for c in courses if c.get("status") in {"IN_PROGRESS", "OVERDUE", "LOW_SCORE"}])
+        completed = len([c for c in courses if c.get("status") == "COMPLETED"])
+        avg_progress = int(sum(int(c.get("progress", 0)) for c in courses) / total) if total else 0
+        nearest_deadline = "—"
+        deadlines = sorted([c.get("deadline") for c in courses if c.get("deadline") and c.get("status") != "COMPLETED"])
+        if deadlines:
+            nearest_deadline = deadlines[0]
+        recent_courses = [c.get("title", "") for c in sorted(courses, key=lambda x: int(x.get("progress", 0)), reverse=True)[:3]]
+        return {
+            "totalCourses": total,
+            "inProgressCourses": in_progress,
+            "completedCourses": completed,
+            "averageProgress": avg_progress,
+            "averageScore": 0,
+            "overdueCourses": len([c for c in courses if c.get("status") == "OVERDUE"]),
+            "nearestDeadline": nearest_deadline,
+            "recentCourses": [c for c in recent_courses if c],
+        }
 
     def _dashboard_fallback(self) -> dict[str, Any]:
         return {
