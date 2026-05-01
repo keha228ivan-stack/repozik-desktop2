@@ -214,7 +214,7 @@ class AppState(QObject):
 
     def _build_dashboard_from_courses(self, courses: list[dict[str, Any]]) -> dict[str, Any]:
         total = len(courses)
-        in_progress = len([c for c in courses if c.get("status") == "IN_PROGRESS"])
+        in_progress = len([c for c in courses if c.get("status") in {"IN_PROGRESS", "OVERDUE", "LOW_SCORE"}])
         completed = len([c for c in courses if c.get("status") == "COMPLETED"])
         avg_progress = int(sum(int(c.get("progress", 0)) for c in courses) / total) if total else 0
         nearest_deadline = "—"
@@ -247,12 +247,11 @@ class AppState(QObject):
 
     def _mock_courses(self) -> list[dict[str, Any]]:
         return [
-            {"id": "1", "title": "Охрана труда", "description": "Базовые правила", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 6, "estimatedMinutes": 120, "deadline": "2026-05-03", "lessons": [{"id": "1-1", "title": "Введение", "status": "AVAILABLE"}, {"id": "1-2", "title": "Инструктаж", "status": "AVAILABLE"}, {"id": "1-3", "title": "Практика", "status": "AVAILABLE"}]},
+            {"id": "1", "title": "Охрана труда", "description": "Базовые правила", "status": "IN_PROGRESS", "progress": 35, "lessonsCount": 6, "estimatedMinutes": 120, "deadline": "2026-05-03", "lastLesson": "Модуль 2", "lessons": [{"id": "1-1", "title": "Введение", "status": "COMPLETED"}, {"id": "1-2", "title": "Инструктаж", "status": "AVAILABLE"}, {"id": "1-3", "title": "Практика", "status": "AVAILABLE"}]},
             {"id": "2", "title": "Командная работа", "description": "Коммуникации", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 5, "estimatedMinutes": 95, "deadline": "2026-05-12", "lessons": [{"id": "2-1", "title": "Роли в команде", "status": "AVAILABLE"}, {"id": "2-2", "title": "Обратная связь", "status": "AVAILABLE"}]},
-            {"id": "3", "title": "Антифрод", "description": "Проверка рисков", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 7, "estimatedMinutes": 140, "deadline": "2026-04-20", "lessons": [{"id": "3-1", "title": "Риски", "status": "AVAILABLE"}]},
-            {"id": "4", "title": "Этика и комплаенс", "description": "Нормы поведения", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 8, "estimatedMinutes": 170, "deadline": "2026-04-10", "lessons": [{"id": "4-1", "title": "Кодекс", "status": "AVAILABLE"}, {"id": "4-2", "title": "Конфликты интересов", "status": "AVAILABLE"}]},
+            {"id": "3", "title": "Антифрод", "description": "Проверка рисков", "status": "COMPLETED", "progress": 100, "lessonsCount": 7, "estimatedMinutes": 140, "deadline": "2026-04-20", "testResult": "86%", "lessons": [{"id": "3-1", "title": "Риски", "status": "COMPLETED"}]},
+            {"id": "4", "title": "Этика и комплаенс", "description": "Нормы поведения", "status": "OVERDUE", "progress": 50, "lessonsCount": 8, "estimatedMinutes": 170, "deadline": "2026-04-10", "lastLesson": "Модуль 4", "lessons": [{"id": "4-1", "title": "Кодекс", "status": "COMPLETED"}, {"id": "4-2", "title": "Конфликты интересов", "status": "AVAILABLE"}]},
         ]
-
 
     def _mock_profile(self) -> dict[str, Any]:
         return {
@@ -262,9 +261,9 @@ class AppState(QObject):
             "department": "People Operations",
             "registeredAt": "2025-09-01",
             "role": "Сотрудник",
-            "overallProgress": 0,
-            "assignedCourses": 4,
-            "completedCourses": 0,
-            "averageScore": 0,
+            "overallProgress": 62,
+            "assignedCourses": 12,
+            "completedCourses": 7,
+            "averageScore": 81,
             "history": self._mock_courses(),
         }
