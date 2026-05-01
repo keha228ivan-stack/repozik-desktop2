@@ -52,12 +52,17 @@ class CoursesPage(QWidget):
 
     def refresh(self) -> None:
         self.status.setText("Загрузка курсов...")
-        status = self.locked_status or self.filter.currentText()
-        self.state.load_courses(self.search.text().strip(), status)
+        self.state.load_courses()
 
     def _set_courses(self, courses: list) -> None:
-        if self.locked_status:
-            courses = [c for c in courses if c.get("status") == self.locked_status]
+        query = self.search.text().strip().lower()
+        if query:
+            courses = [c for c in courses if query in c.get("title", "").lower()]
+
+        status = self.locked_status or self.filter.currentText()
+        if status and status != "ALL":
+            courses = [c for c in courses if c.get("status") == status]
+
         while self.container.count():
             child = self.container.takeAt(0)
             if child.widget():
