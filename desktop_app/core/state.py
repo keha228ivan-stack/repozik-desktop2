@@ -101,13 +101,12 @@ class AppState(QObject):
         self.auth_changed.emit(False)
 
     def load_dashboard(self) -> None:
-        data = self._dashboard_fallback()
-        if not self.offline_mode:
-            try:
-                data = self.api.get_dashboard()
-            except ApiError:
-                pass
-        self.dashboard_changed.emit(data)
+        try:
+            data = self.api.get_employee_courses() if not self.offline_mode else {"courses": self._local_courses}
+            courses = data.get("courses") or data.get("items") or []
+            self.dashboard_changed.emit(self._build_dashboard_from_courses(courses))
+        except ApiError:
+            self.dashboard_changed.emit(self._build_dashboard_from_courses(self._local_courses))
 
     def load_courses(self, q: str = "", status: str = "ALL") -> None:
         try:
@@ -202,6 +201,27 @@ class AppState(QObject):
 
     def create_topic(self, title: str, body: str) -> bool:
         return False
+
+    def _build_dashboard_from_courses(self, courses: list[dict[str, Any]]) -> dict[str, Any]:
+        total = len(courses)
+        in_progress = len([c for c in courses if c.get("status") in {"IN_PROGRESS", "OVERDUE", "LOW_SCORE"}])
+        completed = len([c for c in courses if c.get("status") == "COMPLETED"])
+        avg_progress = int(sum(int(c.get("progress", 0)) for c in courses) / total) if total else 0
+        nearest_deadline = "—"
+        deadlines = sorted([c.get("deadline") for c in courses if c.get("deadline") and c.get("status") != "COMPLETED"])
+        if deadlines:
+            nearest_deadline = deadlines[0]
+        recent_courses = [c.get("title", "") for c in sorted(courses, key=lambda x: int(x.get("progress", 0)), reverse=True)[:3]]
+        return {
+            "totalCourses": total,
+            "inProgressCourses": in_progress,
+            "completedCourses": completed,
+            "averageProgress": avg_progress,
+            "averageScore": 0,
+            "overdueCourses": len([c for c in courses if c.get("status") == "OVERDUE"]),
+            "nearestDeadline": nearest_deadline,
+            "recentCourses": [c for c in recent_courses if c],
+        }
 
     def _dashboard_fallback(self) -> dict[str, Any]:
         return {
