@@ -125,7 +125,7 @@ class AppState(QObject):
 
     def load_profile(self) -> None:
         try:
-            profile = self.api.get_profile() if not self.offline_mode else self._mock_profile()
+            profile = self.api.get_profile() if not self.offline_mode else self._build_local_profile()
             self.profile_changed.emit(profile)
             self.profile_error.emit("")
         except ApiError as exc:
@@ -254,6 +254,25 @@ class AppState(QObject):
             {"id": "4", "title": "Этика и комплаенс", "description": "Нормы поведения", "status": "NOT_STARTED", "progress": 0, "lessonsCount": 8, "estimatedMinutes": 170, "deadline": "2026-04-10", "testQuestions": [{"q": "Что делать при конфликте интересов?", "options": ["Скрыть", "Сообщить руководителю", "Игнорировать"]}], "lessons": [{"id": "4-1", "title": "Кодекс", "status": "AVAILABLE", "content": "Кодекс поведения: уважение, законность, прозрачность и ответственность."}, {"id": "4-2", "title": "Конфликты интересов", "status": "AVAILABLE", "content": "Как выявлять и декларировать конфликт интересов, примеры и действия."}]},
         ]
 
+
+    def _build_local_profile(self) -> dict[str, Any]:
+        user = self.user or {}
+        courses = self._local_courses
+        assigned = len(courses)
+        completed = len([c for c in courses if c.get("status") == "COMPLETED"])
+        avg_progress = int(sum(int(c.get("progress", 0)) for c in courses) / assigned) if assigned else 0
+        return {
+            "fullName": user.get("fullName", "Сотрудник"),
+            "email": user.get("email", "—"),
+            "position": user.get("position", "Сотрудник"),
+            "department": user.get("department", "—"),
+            "registeredAt": user.get("registeredAt", "—"),
+            "role": user.get("role", "Сотрудник"),
+            "overallProgress": avg_progress,
+            "assignedCourses": assigned,
+            "completedCourses": completed,
+            "averageScore": 0,
+        }
 
     def _mock_profile(self) -> dict[str, Any]:
         return {
