@@ -31,7 +31,7 @@ class DashboardPage(QWidget):
             ("totalCourses", "Всего курсов", "📚"),
             ("inProgressCourses", "В процессе", "⏳"),
             ("completedCourses", "Завершено", "✅"),
-            ("averageProgress", "Средний прогресс", "📈"),
+            ("averageProgress", "Прогресс (в процессе)", "📈"),
         ]):
             card = QFrame()
             card.setObjectName("metricCard")

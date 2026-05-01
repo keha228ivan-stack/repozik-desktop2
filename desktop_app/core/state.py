@@ -216,7 +216,8 @@ class AppState(QObject):
         total = len(courses)
         in_progress = len([c for c in courses if c.get("status") == "IN_PROGRESS"])
         completed = len([c for c in courses if c.get("status") == "COMPLETED"])
-        avg_progress = int(sum(int(c.get("progress", 0)) for c in courses) / total) if total else 0
+        in_progress_courses = [c for c in courses if c.get("status") == "IN_PROGRESS"]
+        avg_progress = int(sum(int(c.get("progress", 0)) for c in in_progress_courses) / len(in_progress_courses)) if in_progress_courses else 0
         nearest_deadline = "—"
         deadlines = sorted([c.get("deadline") for c in courses if c.get("deadline") and c.get("status") != "COMPLETED"])
         if deadlines:
