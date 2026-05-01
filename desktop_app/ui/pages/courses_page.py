@@ -1,5 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QComboBox, QDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QListWidget, QPushButton, QProgressBar, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QComboBox, QDialog, QFrame, QHBoxLayout, QLabel, QLineEdit, QListWidget, QPushButton, QProgressBar, QScrollArea, QTextBrowser, QVBoxLayout, QWidget
 
 from desktop_app.core.state import AppState
 
@@ -121,6 +121,24 @@ class CoursesPage(QWidget):
         l.addWidget(action, alignment=Qt.AlignmentFlag.AlignLeft)
         return frame
 
+    def _open_lesson_dialog(self, lesson: dict) -> None:
+        dlg = QDialog(self)
+        dlg.setWindowTitle(lesson.get("title", "Урок"))
+        dlg.resize(760, 520)
+        layout = QVBoxLayout(dlg)
+
+        title = QLabel(f"<b>{lesson.get('title', 'Урок')}</b>")
+        content = QTextBrowser()
+        content.setOpenExternalLinks(True)
+        content.setHtml(
+            f"<h3>{lesson.get('title', 'Урок')}</h3>"
+            f"<p>{lesson.get('content', 'Материалы урока пока заполняются.')}</p>"
+            "<p><i>Иллюстрация/медиа для урока может быть добавлена сюда.</i></p>"
+        )
+        layout.addWidget(title)
+        layout.addWidget(content)
+        dlg.exec()
+
     def _open_course_dialog(self, course: dict) -> None:
         details = self.state.get_course_details(str(course.get("id"))) or course
         dlg = QDialog(self)
@@ -140,15 +158,23 @@ class CoursesPage(QWidget):
                 lessons_list.addItem(f"{lesson_title} — {ls.get('status')}")
         layout.addWidget(QLabel("Уроки"))
         layout.addWidget(lessons_list)
-        lesson_content = QLabel("Выберите урок, чтобы посмотреть содержимое")
-        lesson_content.setWordWrap(True)
-        lesson_content.setObjectName("courseMeta")
-        def _show_lesson_content() -> None:
+        open_lesson_btn = QPushButton("Открыть урок")
+        open_lesson_btn.setObjectName("secondaryButton")
+        def _open_selected_lesson() -> None:
             row = lessons_list.currentRow()
             if 0 <= row < len(lessons):
-                lesson_content.setText(lessons[row].get("content", "Содержимое урока пока не заполнено"))
-        lessons_list.currentRowChanged.connect(lambda _row: _show_lesson_content())
-        layout.addWidget(lesson_content)
+                self._open_lesson_dialog(lessons[row])
+        open_lesson_btn.clicked.connect(_open_selected_lesson)
+        lessons_list.itemDoubleClicked.connect(lambda _item: _open_selected_lesson())
+        layout.addWidget(open_lesson_btn, alignment=Qt.AlignmentFlag.AlignLeft)
+
+        questions = details.get("testQuestions", [])
+        if questions:
+            layout.addWidget(QLabel("Примеры вопросов теста"))
+            questions_list = QListWidget()
+            for q in questions:
+                questions_list.addItem(str(q.get("q", "Вопрос")))
+            layout.addWidget(questions_list)
         if self.locked_status is None:
             start_btn = QPushButton("Начать обучение")
             start_btn.setObjectName("primaryButton")
