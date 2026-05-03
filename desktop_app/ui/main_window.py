@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
         self.courses = CoursesPage(state, title_text="Библиотека курсов")
         self.courses_in_progress = CoursesPage(state, title_text="Курсы в процессе", locked_status="IN_PROGRESS")
         self.courses_completed = CoursesPage(state, title_text="Завершённые курсы", locked_status="COMPLETED")
+        self.courses_overdue = CoursesPage(state, title_text="Просроченные курсы", locked_status="OVERDUE")
         self.forum = ForumPage(state)
         self.notifications = NotificationsPage(state)
 
@@ -54,14 +55,15 @@ class MainWindow(QMainWindow):
         self.stack.addWidget(self.courses)        # 2
         self.stack.addWidget(self.courses_in_progress)  # 3
         self.stack.addWidget(self.courses_completed)  # 4
-        self.stack.addWidget(self.forum)          # 5
-        self.stack.addWidget(self.notifications)  # 6
+        self.stack.addWidget(self.courses_overdue)  # 5
+        self.stack.addWidget(self.forum)          # 6
+        self.stack.addWidget(self.notifications)  # 7
         body.addWidget(self.stack, 1)
 
         root_layout.addLayout(body, 1)
         self.setCentralWidget(root)
 
-        self._nav_to_stack_index = [0, 2, 3, 4, 1]
+        self._nav_to_stack_index = [0, 2, 3, 4, 5, 1]
         self._set_active_nav(0)
         self._apply_styles()
 
@@ -104,6 +106,7 @@ class MainWindow(QMainWindow):
             "📚 Библиотека курсов",
             "⏳ В процессе",
             "✅ Завершённые",
+            "🚨 Просроченные",
             "👤 Профиль",
         ]):
             btn = QPushButton(text)
@@ -135,6 +138,7 @@ class MainWindow(QMainWindow):
         self.courses.refresh()
         self.courses_in_progress.refresh()
         self.courses_completed.refresh()
+        self.courses_overdue.refresh()
         self.forum.refresh()
         self.notifications.refresh()
 

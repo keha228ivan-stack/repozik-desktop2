@@ -84,7 +84,12 @@ class CoursesPage(QWidget):
         desc = QLabel(c.get("description", "")); desc.setObjectName("courseMeta")
         status = c.get("status")
         badge_text = "Доступен" if self.locked_status == "NOT_STARTED" else STATUS_LABELS.get(status, status)
-        meta = QLabel(f"Уроков: {c.get('lessonsCount', 0)} • Дедлайн: {c.get('deadline', '—')}")
+        lessons_count = len(c.get("lessons", [])) or int(c.get("lessonsCount", 0))
+        if self.locked_status is None:
+            meta_text = f"Уроков: {lessons_count}"
+        else:
+            meta_text = f"Уроков: {lessons_count} • Дедлайн: {c.get('deadline', '—')}"
+        meta = QLabel(meta_text)
         meta.setObjectName("courseMeta")
 
         l.addWidget(title)
