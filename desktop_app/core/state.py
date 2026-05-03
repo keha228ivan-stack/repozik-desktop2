@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime
+from datetime import datetime, date
 from typing import Any, Callable, Dict, List
 
 from desktop_app.api.client import ApiClient
@@ -112,6 +112,7 @@ class AppState(QObject):
         try:
             data = self.api.get_employee_courses() if not self.offline_mode else {"courses": self._local_courses}
             courses = data.get("courses") or data.get("items") or []
+            courses = self._apply_overdue_status(courses)
             if q:
                 courses = [c for c in courses if q.lower() in c.get("title", "").lower()]
             if status != "ALL":
@@ -212,7 +213,24 @@ class AppState(QObject):
     def create_topic(self, title: str, body: str) -> bool:
         return False
 
+
+    def _apply_overdue_status(self, courses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        today = date.today()
+        for course in courses:
+            deadline = course.get("deadline")
+            status = course.get("status")
+            if not deadline or status in {"COMPLETED"}:
+                continue
+            try:
+                deadline_date = datetime.fromisoformat(str(deadline)).date()
+            except ValueError:
+                continue
+            if deadline_date < today and status in {"NOT_STARTED", "IN_PROGRESS", "LOW_SCORE"}:
+                course["status"] = "OVERDUE"
+        return courses
+
     def _build_dashboard_from_courses(self, courses: list[dict[str, Any]]) -> dict[str, Any]:
+        courses = self._apply_overdue_status(courses)
         total = len(courses)
         in_progress = len([c for c in courses if c.get("status") == "IN_PROGRESS"])
         completed = len([c for c in courses if c.get("status") == "COMPLETED"])
