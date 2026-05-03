@@ -79,9 +79,9 @@ class AppState(QObject):
             self.error.emit(str(exc))
             return False
 
-    def register(self, full_name: str, email: str, password: str) -> bool:
+    def register(self, full_name: str, email: str, password: str, department: str) -> bool:
         try:
-            payload = self.local_auth.register(full_name=full_name, email=email, password=password)
+            payload = self.local_auth.register(full_name=full_name, email=email, password=password, department=department)
             token = payload.get("token")
             if token:
                 self.api.set_token(token)

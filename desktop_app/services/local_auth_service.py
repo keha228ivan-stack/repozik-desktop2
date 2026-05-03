@@ -18,13 +18,17 @@ class LocalAuthService:
     def _hash_password(self, password: str) -> str:
         return hashlib.sha256(password.encode("utf-8")).hexdigest()
 
-    def register(self, full_name: str, email: str, password: str, position: str | None = None) -> dict[str, Any]:
+    def register(self, full_name: str, email: str, password: str, department: str, position: str | None = None) -> dict[str, Any]:
         full_name = full_name.strip()
         email = email.strip().lower()
         if not full_name or not email or not password:
             raise ApiError("Заполните обязательные поля", status_code=400)
         if self.storage.find_user_by_email(email):
             raise ApiError("Пользователь с таким email уже существует", status_code=409)
+
+        allowed_departments = {"Отдел продаж", "Бухгалтерия", "IT-отдел", "Производство"}
+        if department not in allowed_departments:
+            raise ApiError("Выберите отдел из списка", status_code=400)
 
         now = datetime.now(timezone.utc).isoformat()
         user_id = str(uuid4())
@@ -42,7 +46,7 @@ class LocalAuthService:
             "fullName": full_name,
             "email": email,
             "position": position or "Сотрудник",
-            "department": "Без отдела",
+            "department": department,
             "status": "В адаптации",
             "createdAt": now,
         }

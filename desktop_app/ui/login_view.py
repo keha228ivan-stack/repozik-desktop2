@@ -3,6 +3,7 @@ from PySide6.QtWidgets import (
     QFormLayout,
     QFrame,
     QLabel,
+    QComboBox,
     QLineEdit,
     QMessageBox,
     QPushButton,
@@ -85,6 +86,8 @@ class LoginView(QWidget):
         self.reg_password_confirm = QLineEdit()
         self.reg_password_confirm.setEchoMode(QLineEdit.EchoMode.Password)
         self.reg_password_confirm.setPlaceholderText("Повторите пароль")
+        self.reg_department = QComboBox()
+        self.reg_department.addItems(["Отдел продаж", "Бухгалтерия", "IT-отдел", "Производство"])
 
         info = QLabel("Регистрация доступна только для сотрудников")
         info.setObjectName("hint")
@@ -97,6 +100,7 @@ class LoginView(QWidget):
         form.addRow("Email", self.reg_email)
         form.addRow("Пароль", self.reg_password)
         form.addRow("Подтверждение", self.reg_password_confirm)
+        form.addRow("Отдел", self.reg_department)
         form.addRow("", info)
         form.addRow("", btn)
         return w
@@ -126,7 +130,7 @@ class LoginView(QWidget):
         if "@" not in email:
             self._show_error("Введите корректный email")
             return
-        self.state.register(full_name, email, password)
+        self.state.register(full_name, email, password, self.reg_department.currentText())
 
     def _show_error(self, text: str) -> None:
         if self.isVisible():
